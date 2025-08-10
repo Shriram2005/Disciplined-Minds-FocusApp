@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <RelativeLayout
+        android:id="@+id/rlMain"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/dp_16_dp"
+        android:paddingEnd="@dimen/dp_16_dp">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/ivAppIcon"
+            android:layout_width="@dimen/dp_48_dp"
+            android:layout_height="@dimen/dp_48_dp"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:src="@mipmap/ic_launcher" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/tvAppName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="@dimen/dp_16_dp"
+            android:layout_marginEnd="@dimen/dp_16_dp"
+            android:layout_toStartOf="@id/ivLock"
+            android:layout_toEndOf="@id/ivAppIcon"
+            android:text="@string/app_name"
+            android:textColor="@color/black"
+            android:textSize="@dimen/sp_20_sp"
+            android:textStyle="bold" />
+
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/ivLock"
+            android:layout_width="@dimen/dp_32_dp"
+            android:layout_height="@dimen/dp_32_dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_lock"
+            android:tint="@color/gray_10" />
+
+    </RelativeLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/dp_1_dp"
+        android:layout_below="@id/rlMain"
+        android:layout_marginTop="@dimen/dp_8_dp"
+        android:layout_marginBottom="@dimen/dp_8_dp"
+        android:background="@color/gray_10" />
+
+</RelativeLayout>

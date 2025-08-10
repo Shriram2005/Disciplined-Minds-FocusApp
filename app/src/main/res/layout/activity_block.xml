@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/block_app" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/dp_30_dp"
+        android:layout_marginTop="@dimen/dp_172_dp"
+        android:layout_marginEnd="@dimen/dp_20_dp"
+        android:includeFontPadding="false"
+        android:text="@string/block_app_message"
+        android:textColor="@color/white"
+        android:textSize="@dimen/sp_26_sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvClose"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="@dimen/dp_16_dp"
+        android:background="@drawable/bg_rounded_border_white"
+        android:includeFontPadding="false"
+        android:paddingStart="@dimen/dp_60_dp"
+        android:paddingTop="@dimen/dp_8_dp"
+        android:paddingEnd="@dimen/dp_60_dp"
+        android:paddingBottom="@dimen/dp_8_dp"
+        android:text="@string/close"
+        android:textColor="@color/white"
+        android:textSize="@dimen/sp_26_sp" />
+
+</RelativeLayout>

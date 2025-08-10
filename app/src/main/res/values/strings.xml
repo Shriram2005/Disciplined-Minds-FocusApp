@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Disciplined Minds</string>
+    <string name="msg_please_wait">Please wait…</string>
+    <string name="configure_app">Configure App</string>
+    <string name="open_app">Open Apps</string>
+    <string name="locked_apps">Locked apps</string>
+    <string name="locked">locked</string>
+    <string name="unlocked">unlocked</string>
+    <string name="lock">lock</string>
+    <string name="open">unlock</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="non_essential_app_locked">Non-Essential Apps Locked</string>
+    <string name="stay_focused">Stay Focused</string>
+    <string name="stop">Stop</string>
+    <string name="close">Close</string>
+    <string name="block_app_message">"This App is locked under Study Mode. Stay away from any distractions and make the most of your Study Time"</string>
+    <string name="stop_session">Stop session</string>
+</resources>
