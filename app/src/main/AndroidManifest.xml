@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-permission android:name="android.permission.GET_TASKS" />
     <uses-permission
@@ -22,10 +23,6 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-
-    <uses-permission
-        android:name="android.permission.PACKAGE_USAGE_STATS"
-        tools:ignore="ProtectedPermissions" />
 
     <queries>
         <package android:name="com.whatsapp" />
@@ -59,6 +56,13 @@
         </activity>
 
         <activity
+            android:name=".permission.PermissionActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:label="@string/app_name">
+        </activity>
+
+        <activity
             android:name=".LockActivity"
             android:exported="true"
             android:screenOrientation="portrait"
@@ -77,6 +81,13 @@
             android:name=".applist.service.AppBlockService"
             android:enabled="true"
             android:exported="true" />
+            
+        <service
+            android:foregroundServiceType="dataSync"
+            android:name=".timer.service.TimerService"
+            android:enabled="true"
+            android:exported="false" />
+            
         <service
             android:exported="true"
             android:name=".applist.service.NotificationService"
@@ -86,6 +97,18 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+
+        <receiver 
+            android:name=".timer.receiver.BootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter android:priority="1000">
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <data android:scheme="package" />
+            </intent-filter>
+        </receiver>
 
 
     </application>

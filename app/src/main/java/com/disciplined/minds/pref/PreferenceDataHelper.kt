@@ -1,4 +1,6 @@
 
+package com.disciplined.minds.pref
+
 import android.content.Context
 import com.disciplined.minds.pref.SharedPreferenceHelper
 import com.google.gson.Gson
@@ -24,6 +26,13 @@ class PreferenceDataHelper private constructor(context: Context) {
         private const val STUDY_TIME = "study_time"
         private const val MEDITATION_TYPE = "meditation_type"
         private const val OBJECT_GAZING_TYPE = "object_gazing_type"
+        
+        // Timer-related constants
+        private const val TIMER_DURATION = "timer_duration"
+        private const val TIMER_START_TIME = "timer_start_time"
+        private const val IS_TIMER_ACTIVE = "is_timer_active"
+        private const val IS_TIMER_BLOCKING_ENABLED = "is_timer_blocking_enabled"
+        
         private var sInstance: PreferenceDataHelper? = null
 
         @Synchronized
@@ -104,5 +113,53 @@ class PreferenceDataHelper private constructor(context: Context) {
 
     fun isFirstTimeAskingPermission(permission: String): Boolean {
         return mSharedPreferenceHelper.getBoolean(permission, true)
+    }
+    
+    // Timer-related methods
+    fun setTimerDuration(durationMinutes: Int) {
+        mSharedPreferenceHelper.setInt(TIMER_DURATION, durationMinutes)
+    }
+    
+    fun getTimerDuration(): Int {
+        return mSharedPreferenceHelper.getInt(TIMER_DURATION, 30) // Default 30 minutes
+    }
+    
+    fun setTimerStartTime(startTime: Long) {
+        mSharedPreferenceHelper.setLong(TIMER_START_TIME, startTime)
+    }
+    
+    fun getTimerStartTime(): Long {
+        return mSharedPreferenceHelper.getLong(TIMER_START_TIME, 0L)
+    }
+    
+    fun setTimerActive(isActive: Boolean) {
+        mSharedPreferenceHelper.setBoolean(IS_TIMER_ACTIVE, isActive)
+    }
+    
+    fun isTimerActive(): Boolean {
+        return mSharedPreferenceHelper.getBoolean(IS_TIMER_ACTIVE, false)
+    }
+    
+    fun setTimerBlockingEnabled(enabled: Boolean) {
+        mSharedPreferenceHelper.setBoolean(IS_TIMER_BLOCKING_ENABLED, enabled)
+    }
+    
+    fun isTimerBlockingEnabled(): Boolean {
+        return mSharedPreferenceHelper.getBoolean(IS_TIMER_BLOCKING_ENABLED, false)
+    }
+    
+    fun getRemainingTimerTime(): Long {
+        if (!isTimerActive()) return 0L
+        
+        val startTime = getTimerStartTime()
+        val duration = getTimerDuration() * 60 * 1000L // Convert minutes to milliseconds
+        val currentTime = System.currentTimeMillis()
+        val elapsed = currentTime - startTime
+        
+        return if (elapsed >= duration) {
+            0L
+        } else {
+            duration - elapsed
+        }
     }
 }

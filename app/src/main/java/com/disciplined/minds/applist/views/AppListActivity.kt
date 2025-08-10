@@ -17,6 +17,7 @@ import com.disciplined.minds.applist.BaseActivity
 import com.disciplined.minds.applist.adapters.ViewPagerAdapter
 import com.disciplined.minds.applist.listeners.UpdateAppList
 import com.disciplined.minds.applist.presenters.AppListPresenter
+import com.disciplined.minds.pref.PreferenceDataHelper
 import com.google.android.material.tabs.TabLayout
 
 /**

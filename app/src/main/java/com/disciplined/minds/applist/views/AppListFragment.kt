@@ -17,6 +17,7 @@ import com.disciplined.minds.applist.BaseFragment
 import com.disciplined.minds.applist.adapters.AppListAdapter
 import com.disciplined.minds.applist.listeners.UpdateAppList
 import com.disciplined.minds.applist.presenters.AppListFragmentPresenter
+import com.disciplined.minds.pref.PreferenceDataHelper
 
 class AppListFragment : BaseFragment<AppListFragmentPresenter>(), AppListFragmentView {
 

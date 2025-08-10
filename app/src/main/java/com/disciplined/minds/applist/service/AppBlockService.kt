@@ -19,6 +19,7 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.disciplined.minds.MainActivity
 import com.disciplined.minds.R
+import com.disciplined.minds.pref.PreferenceDataHelper
 import com.disciplined.minds.pref.StringUtils
 import java.util.*
 import kotlin.collections.ArrayList
@@ -65,9 +66,31 @@ class AppBlockService : Service() {
         val icon = BitmapFactory.decodeResource(resources, R.drawable.app_logo)
         builder =
                 NotificationCompat.Builder(this, channelId)
+        
+        // Update notification text based on current blocking status
+        val preferenceHelper = PreferenceDataHelper.getInstance(applicationContext)!!
+        val isTimerActive = preferenceHelper.isTimerBlockingEnabled() && 
+                           preferenceHelper.isTimerActive() &&
+                           preferenceHelper.getRemainingTimerTime() > 0
+        
+        val notificationTitle = if (isTimerActive) {
+            "Focus Timer Active"
+        } else {
+            resources.getString(R.string.non_essential_app_locked)
+        }
+        
+        val notificationText = if (isTimerActive) {
+            val remainingTime = preferenceHelper.getRemainingTimerTime()
+            val minutes = (remainingTime / 60000).toInt()
+            val seconds = ((remainingTime % 60000) / 1000).toInt()
+            "Time remaining: ${String.format("%02d:%02d", minutes, seconds)}"
+        } else {
+            resources.getString(R.string.stay_focused)
+        }
+        
         val notification =
-                builder!!.setContentTitle(resources.getString(R.string.non_essential_app_locked))
-                        .setContentText(resources.getString(R.string.stay_focused))
+                builder!!.setContentTitle(notificationTitle)
+                        .setContentText(notificationText)
                         .setSmallIcon(R.drawable.app_logo)
                         .setContentIntent(contentPendingIntent)
                         .setOngoing(true)
@@ -103,9 +126,18 @@ class AppBlockService : Service() {
                     val mPackageName: String? =
                                 StringUtils.getRecentApps(applicationContext!!)
 
+                        // Check if timer blocking is enabled and timer is active
+                        val preferenceDataHelper = PreferenceDataHelper.getInstance(applicationContext)!!
+                        val isTimerBlockingActive = preferenceDataHelper.isTimerBlockingEnabled() && 
+                                                   preferenceDataHelper.isTimerActive() &&
+                                                   preferenceDataHelper.getRemainingTimerTime() > 0
 
-                        if (appList != null && mPackageName != null && appList!![mPackageName] != null && appList!![mPackageName]!!
-                                && previousPackage != mPackageName && windowManager == null) {
+                        // Block apps if either study mode is on OR timer blocking is active
+                        val shouldBlockApps = preferenceDataHelper.isStudyMode() || isTimerBlockingActive
+
+                        if (appList != null && mPackageName != null && appList!![mPackageName] != null && 
+                            appList!![mPackageName]!! && shouldBlockApps &&
+                            previousPackage != mPackageName && windowManager == null) {
                             handler.post {
                                 Log.e("krishna","$$$$$"+mPackageName);
                                 openScreen()
