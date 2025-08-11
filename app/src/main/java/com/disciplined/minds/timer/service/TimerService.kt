@@ -10,6 +10,7 @@ import android.os.IBinder
 import android.os.Looper
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.disciplined.minds.MainActivity
 import com.disciplined.minds.R
 import com.disciplined.minds.pref.PreferenceDataHelper
@@ -23,6 +24,7 @@ class TimerService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private var timer: Timer? = null
     private lateinit var preferenceDataHelper: PreferenceDataHelper
+    private lateinit var localBroadcastManager: LocalBroadcastManager
 
     private val channelId = "timer-service-channel"
     private val channelName = "Timer Service"
@@ -40,6 +42,7 @@ class TimerService : Service() {
         super.onCreate()
         preferenceDataHelper = PreferenceDataHelper.getInstance(applicationContext)!!
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        localBroadcastManager = LocalBroadcastManager.getInstance(this)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createNotificationChannel()
@@ -68,30 +71,34 @@ class TimerService : Service() {
     private fun startTimer(durationMinutes: Int) {
         val startTime = System.currentTimeMillis()
         
+        // Update preferences first
         preferenceDataHelper.setTimerDuration(durationMinutes)
         preferenceDataHelper.setTimerStartTime(startTime)
         preferenceDataHelper.setTimerActive(true)
         preferenceDataHelper.setTimerBlockingEnabled(true)
 
-        startForegroundNotification()
-        startTimerCountdown()
-        
-        // Broadcast timer start
+        // Send broadcast immediately after updating preferences
         val broadcast = Intent("com.disciplined.minds.TIMER_UPDATE")
         broadcast.putExtra("timer_started", true)
+        localBroadcastManager.sendBroadcast(broadcast)
         sendBroadcast(broadcast)
+        
+        startForegroundNotification()
+        startTimerCountdown()
     }
 
     private fun stopTimer() {
         timer?.cancel()
         timer = null
         
+        // Update preferences first
         preferenceDataHelper.setTimerActive(false)
         preferenceDataHelper.setTimerBlockingEnabled(false)
         
-        // Broadcast timer stop
+        // Send broadcast immediately after updating preferences
         val broadcast = Intent("com.disciplined.minds.TIMER_UPDATE")
         broadcast.putExtra("timer_stopped", true)
+        localBroadcastManager.sendBroadcast(broadcast)
         sendBroadcast(broadcast)
         
         stopForeground(true)
@@ -104,13 +111,14 @@ class TimerService : Service() {
             val newDuration = currentDuration + extendMinutes
             preferenceDataHelper.setTimerDuration(newDuration)
             
-            updateNotification()
-            
-            // Broadcast timer extension
+            // Send broadcast immediately after updating preferences
             val broadcast = Intent("com.disciplined.minds.TIMER_UPDATE")
             broadcast.putExtra("timer_extended", true)
             broadcast.putExtra("new_duration", newDuration as Int)
+            localBroadcastManager.sendBroadcast(broadcast)
             sendBroadcast(broadcast)
+            
+            updateNotification()
         }
     }
 
@@ -132,6 +140,7 @@ class TimerService : Service() {
                         // Broadcast timer update
                         val broadcast = Intent("com.disciplined.minds.TIMER_UPDATE")
                         broadcast.putExtra("remaining_time", remainingTime as Long)
+                        localBroadcastManager.sendBroadcast(broadcast)
                         sendBroadcast(broadcast)
                     }
                 }
@@ -150,6 +159,7 @@ class TimerService : Service() {
         // Broadcast timer completion
         val broadcast = Intent("com.disciplined.minds.TIMER_UPDATE")
         broadcast.putExtra("timer_completed", true)
+        localBroadcastManager.sendBroadcast(broadcast)
         sendBroadcast(broadcast)
         
         stopForeground(true)

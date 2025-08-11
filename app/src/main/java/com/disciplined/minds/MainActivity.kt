@@ -22,6 +22,8 @@ import com.disciplined.minds.permission.PermissionActivity
 import com.disciplined.minds.pref.PreferenceDataHelper
 import com.disciplined.minds.timer.service.TimerService
 import java.util.*
+import android.app.ActivityManager
+import android.util.Log
 
 
 class MainActivity : AppCompatActivity() {
@@ -53,19 +55,40 @@ class MainActivity : AppCompatActivity() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when {
                 intent?.getBooleanExtra("timer_started", false) == true -> {
-                    updateTimerUI()
+                    Log.d("MainActivity", "Timer started broadcast received")
+                    // Re-enable start button and update UI
+                    btnStartTimer.isEnabled = true
+                    btnStartTimer.text = "Start Timer"
+                    forceRefreshUI()
                 }
                 intent?.getBooleanExtra("timer_stopped", false) == true -> {
-                    updateTimerUI()
+                    Log.d("MainActivity", "Timer stopped broadcast received")
+                    // Re-enable stop buttons and update UI
+                    btnStopTimer.isEnabled = true
+                    btnStopTimer.text = "Stop Timer"
+                    btnStopActiveTimer.isEnabled = true
+                    btnStopActiveTimer.text = "Stop Timer"
+                    forceRefreshUI()
                 }
                 intent?.getBooleanExtra("timer_completed", false) == true -> {
-                    updateTimerUI()
+                    Log.d("MainActivity", "Timer completed broadcast received")
+                    // Re-enable all buttons and update UI
+                    btnStartTimer.isEnabled = true
+                    btnStartTimer.text = "Start Timer"
+                    btnStopTimer.isEnabled = true
+                    btnStopTimer.text = "Stop Timer"
+                    btnStopActiveTimer.isEnabled = true
+                    btnStopActiveTimer.text = "Stop Timer"
+                    forceRefreshUI()
                 }
                 intent?.hasExtra("remaining_time") == true -> {
                     updateTimerDisplay()
                 }
+                intent?.getBooleanExtra("timer_extended", false) == true -> {
+                    Log.d("MainActivity", "Timer extended broadcast received")
+                    forceRefreshUI()
+                }
             }
-            updateBlockingStatus()
         }
     }
 
@@ -80,10 +103,27 @@ class MainActivity : AppCompatActivity() {
         init()
     }
     
+    private fun forceRefreshUI() {
+        // Force refresh all UI elements
+        updateTimerUI()
+        updateBlockingStatus()
+        updateTimerDisplay()
+        
+        // Log current state for debugging
+        try {
+            val isTimerActive = preferenceDataHelper.isTimerActive()
+            val remainingTime = preferenceDataHelper.getRemainingTimerTime()
+            val isTimerBlocking = preferenceDataHelper.isTimerBlockingEnabled()
+            
+            Log.d("MainActivity", "Force refresh - Timer active: $isTimerActive, Remaining: $remainingTime, Blocking: $isTimerBlocking")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error in forceRefreshUI", e)
+        }
+    }
+    
     override fun onResume() {
         super.onResume()
-        updateBlockingStatus()
-        updateTimerUI()
+        forceRefreshUI()
         startTimerUpdateLoop()
         
         // Register broadcast receiver with proper export flag for Android 13+
@@ -156,6 +196,18 @@ class MainActivity : AppCompatActivity() {
         btnStopActiveTimer.setOnClickListener {
             stopFocusTimer()
         }
+        
+        // Add long press on timer display to refresh state
+        tvTimerDisplay.setOnLongClickListener {
+            refreshTimerState()
+            true
+        }
+        
+        // Add long press on blocking status to refresh
+        tvBlockingStatus.setOnLongClickListener {
+            refreshTimerState()
+            true
+        }
     }
 
     private fun init() {
@@ -191,37 +243,123 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun startFocusTimer(durationMinutes: Int) {
+        // Provide immediate visual feedback
+        btnStartTimer.isEnabled = false
+        btnStartTimer.text = "Starting..."
+        
         val intent = Intent(this, TimerService::class.java)
         intent.action = TimerService.ACTION_START_TIMER
         intent.putExtra(TimerService.EXTRA_TIMER_DURATION, durationMinutes)
         startForegroundService(intent)
         
-        updateTimerUI()
+        // Ensure AppBlockService is running to handle blocking
+        ensureAppBlockServiceRunning()
+        
+        // Update UI immediately to show timer is starting
+        showTimerStartingState()
+        
+        // Schedule a delayed UI update to ensure synchronization
+        handler.postDelayed({
+            updateTimerUI()
+            updateBlockingStatus()
+        }, 500) // 500ms delay to allow service to update preferences
     }
     
     private fun stopFocusTimer() {
+        // Provide immediate visual feedback
+        btnStopTimer.isEnabled = false
+        btnStopTimer.text = "Stopping..."
+        btnStopActiveTimer.isEnabled = false
+        btnStopActiveTimer.text = "Stopping..."
+        
         val intent = Intent(this, TimerService::class.java)
         intent.action = TimerService.ACTION_STOP_TIMER
         startService(intent)
         
-        updateTimerUI()
+        // Update UI immediately to show timer is stopping
+        showTimerStoppingState()
+        
+        // Schedule a delayed UI update to ensure synchronization
+        handler.postDelayed({
+            updateTimerUI()
+            updateBlockingStatus()
+            // Re-enable buttons
+            btnStartTimer.isEnabled = true
+            btnStartTimer.text = "Start Timer"
+            btnStopTimer.isEnabled = true
+            btnStopTimer.text = "Stop Timer"
+            btnStopActiveTimer.isEnabled = true
+            btnStopActiveTimer.text = "Stop Timer"
+        }, 500) // 500ms delay to allow service to update preferences
     }
     
     private fun extendFocusTimer(extendMinutes: Int) {
+        // Provide immediate visual feedback
+        btnExtendTimer.isEnabled = false
+        btnExtendTimer.text = "Extending..."
+        
         val intent = Intent(this, TimerService::class.java)
         intent.action = TimerService.ACTION_EXTEND_TIMER
         intent.putExtra(TimerService.EXTRA_EXTEND_MINUTES, extendMinutes)
         startService(intent)
+        
+        // Re-enable button after a short delay
+        handler.postDelayed({
+            btnExtendTimer.isEnabled = true
+            btnExtendTimer.text = "Extend (+15min)"
+        }, 1000)
+    }
+    
+    private fun ensureAppBlockServiceRunning() {
+        // Check if AppBlockService is running, if not start it
+        val isAppBlockServiceRunning = isServiceRunning(AppBlockService::class.java)
+        if (!isAppBlockServiceRunning) {
+            startService(Intent(this, AppBlockService::class.java))
+        }
+    }
+    
+    private fun isServiceRunning(serviceClass: Class<*>): Boolean {
+        val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        for (service in manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.name == service.service.className) {
+                return true
+            }
+        }
+        return false
     }
     
     private fun updateTimerUI() {
-        val isTimerActive = preferenceDataHelper.isTimerActive()
-        
-        if (isTimerActive) {
-            layoutTimerControls.visibility = View.GONE
-            layoutActiveTimer.visibility = View.VISIBLE
-            updateTimerDisplay()
-        } else {
+        try {
+            val isTimerActive = preferenceDataHelper.isTimerActive()
+            val remainingTime = preferenceDataHelper.getRemainingTimerTime()
+            
+            Log.d("MainActivity", "updateTimerUI: isTimerActive=$isTimerActive, remainingTime=$remainingTime")
+            
+            if (isTimerActive && remainingTime > 0) {
+                // Timer is active and has remaining time
+                layoutTimerControls.visibility = View.GONE
+                layoutActiveTimer.visibility = View.VISIBLE
+                updateTimerDisplay()
+                
+                // Ensure stop button is properly configured
+                btnStopActiveTimer.isEnabled = true
+                btnStopActiveTimer.text = "Stop Timer"
+                
+            } else {
+                // Timer is not active or has no remaining time
+                layoutTimerControls.visibility = View.VISIBLE
+                layoutActiveTimer.visibility = View.GONE
+                tvTimerDisplay.text = "00:00"
+                
+                // Ensure start button is properly configured
+                btnStartTimer.isEnabled = true
+                btnStartTimer.text = "Start Timer"
+                btnStopTimer.isEnabled = true
+                btnStopTimer.text = "Stop Timer"
+            }
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error in updateTimerUI", e)
+            // Fallback to default state
             layoutTimerControls.visibility = View.VISIBLE
             layoutActiveTimer.visibility = View.GONE
             tvTimerDisplay.text = "00:00"
@@ -269,9 +407,13 @@ class MainActivity : AppCompatActivity() {
         timerUpdateTimer?.schedule(object : TimerTask() {
             override fun run() {
                 handler.post {
-                    if (preferenceDataHelper.isTimerActive()) {
-                        updateTimerDisplay()
-                        updateBlockingStatus()
+                    try {
+                        if (preferenceDataHelper.isTimerActive()) {
+                            updateTimerDisplay()
+                            updateBlockingStatus()
+                        }
+                    } catch (e: Exception) {
+                        Log.e("MainActivity", "Error in timer update loop", e)
                     }
                 }
             }
@@ -282,11 +424,36 @@ class MainActivity : AppCompatActivity() {
         timerUpdateTimer?.cancel()
         timerUpdateTimer = null
     }
+    
+    // Add a method to manually refresh timer state
+    private fun refreshTimerState() {
+        handler.post {
+            forceRefreshUI()
+        }
+    }
 
     private fun checkForPermission(context: Context): Boolean {
         val appOps = context.getSystemService(APP_OPS_SERVICE) as AppOpsManager
         val mode =
             appOps.checkOpNoThrow(OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), context.packageName)
         return mode == AppOpsManager.MODE_ALLOWED
+    }
+
+    private fun showTimerStartingState() {
+        // Show loading state while timer is starting
+        layoutTimerControls.visibility = View.GONE
+        layoutActiveTimer.visibility = View.VISIBLE
+        tvTimerDisplay.text = "Starting..."
+        btnStopActiveTimer.isEnabled = false
+        btnStopActiveTimer.text = "Starting..."
+    }
+    
+    private fun showTimerStoppingState() {
+        // Show stopping state while timer is stopping
+        layoutTimerControls.visibility = View.GONE
+        layoutActiveTimer.visibility = View.VISIBLE
+        tvTimerDisplay.text = "Stopping..."
+        btnStopActiveTimer.isEnabled = false
+        btnStopActiveTimer.text = "Stopping..."
     }
 }

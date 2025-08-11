@@ -74,26 +74,62 @@ class StringUtils {
         @RequiresApi(Build.VERSION_CODES.LOLLIPOP_MR1)
         fun getRecentApps(context: Context): String? {
             var topPackageName = ""
-            topPackageName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                val mUsageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-                val time = System.currentTimeMillis()
-                val usageEvents = mUsageStatsManager.queryEvents(time - 1000 * 30, time + 10 * 1000)
-                val event = UsageEvents.Event()
-                while (usageEvents.hasNextEvent()) {
-                    usageEvents.getNextEvent(event)
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                try {
+                    val mUsageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+                    val time = System.currentTimeMillis()
+                    
+                    // Increase the time window for better detection
+                    val usageEvents = mUsageStatsManager.queryEvents(time - 1000 * 60, time + 10 * 1000)
+                    val event = UsageEvents.Event()
+                    
+                    var lastResumedPackage = ""
+                    while (usageEvents.hasNextEvent()) {
+                        usageEvents.getNextEvent(event)
+                        if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
+                            lastResumedPackage = event.packageName
+                        }
+                    }
+                    
+                    if (!TextUtils.isEmpty(lastResumedPackage)) {
+                        return lastResumedPackage
+                    }
+                    
+                    // Fallback: try to get the most recent usage stats
+                    val usageStats = mUsageStatsManager.queryUsageStats(
+                        UsageStatsManager.INTERVAL_DAILY,
+                        time - 1000 * 60 * 5, // Last 5 minutes
+                        time
+                    )
+                    
+                    if (usageStats.isNotEmpty()) {
+                        val mostRecent = usageStats.maxByOrNull { it.lastTimeUsed }
+                        if (mostRecent != null && !TextUtils.isEmpty(mostRecent.packageName)) {
+                            return mostRecent.packageName
+                        }
+                    }
+                    
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
-                if (!TextUtils.isEmpty(event.packageName) && event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
-                    return event.packageName
-                } else {
-                    ""
-                }
-            } else {
+            }
+            
+            // Fallback to old method for older Android versions
+            try {
                 val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
                 val taskInfo = am.getRunningTasks(1)
-                val componentInfo = taskInfo[0].topActivity
-                componentInfo!!.packageName
+                if (taskInfo.isNotEmpty()) {
+                    val componentInfo = taskInfo[0].topActivity
+                    if (componentInfo != null) {
+                        return componentInfo.packageName
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            return topPackageName
+            
+            return ""
         }
     }
 }

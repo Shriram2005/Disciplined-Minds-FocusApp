@@ -1,8 +1,10 @@
 package com.disciplined.minds.applist.service
 
 import android.app.*
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -17,6 +19,7 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.disciplined.minds.MainActivity
 import com.disciplined.minds.R
 import com.disciplined.minds.pref.PreferenceDataHelper
@@ -35,15 +38,74 @@ class AppBlockService : Service() {
     private var isServiceRunning = false
     var appList: HashMap<String, Boolean>? = null
     var windowManager: WindowManager? = null
+    private lateinit var localBroadcastManager: LocalBroadcastManager
 
     var channelId ="genius-me-study-mode"
     var channelName ="Study Mode"
     var notificationServiceId = 10124
 
+    // Broadcast receiver for timer updates
+    private val timerUpdateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when {
+                intent?.getBooleanExtra("timer_started", false) == true -> {
+                    Log.d("AppBlockService", "Timer started - enabling blocking")
+                    updateNotification()
+                    forceRefreshBlockingState()
+                }
+                intent?.getBooleanExtra("timer_stopped", false) == true -> {
+                    Log.d("AppBlockService", "Timer stopped - updating blocking status")
+                    updateNotification()
+                    forceRefreshBlockingState()
+                }
+                intent?.getBooleanExtra("timer_completed", false) == true -> {
+                    Log.d("AppBlockService", "Timer completed - disabling blocking")
+                    updateNotification()
+                    forceRefreshBlockingState()
+                }
+                intent?.hasExtra("remaining_time") == true -> {
+                    updateNotification()
+                }
+            }
+        }
+    }
+    
+    private fun forceRefreshBlockingState() {
+        try {
+            // Refresh app list and blocking state
+            appList = PreferenceDataHelper.getInstance(applicationContext)!!.getAppList()
+            
+            // Force a check of the current app
+            val currentPackage = StringUtils.getRecentApps(applicationContext!!)
+            if (currentPackage != null && !currentPackage.isEmpty()) {
+                val preferenceDataHelper = PreferenceDataHelper.getInstance(applicationContext)!!
+                val isTimerBlockingActive = preferenceDataHelper.isTimerBlockingEnabled() && 
+                                           preferenceDataHelper.isTimerActive() &&
+                                           preferenceDataHelper.getRemainingTimerTime() > 0
+                val shouldBlockApps = preferenceDataHelper.isStudyMode() || isTimerBlockingActive
+                
+                if (shouldBlockApps && appList?.get(currentPackage) == true && windowManager == null) {
+                    Log.d("AppBlockService", "Force refresh: blocking $currentPackage")
+                    handler.post {
+                        openScreen()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("AppBlockService", "Error in forceRefreshBlockingState", e)
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         notificationManager =
                 getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        localBroadcastManager = LocalBroadcastManager.getInstance(this)
+        
+        // Register for timer updates
+        val filter = IntentFilter("com.disciplined.minds.TIMER_UPDATE")
+        localBroadcastManager.registerReceiver(timerUpdateReceiver, filter)
+        
         startServiceWithNotification()
     }
 
@@ -67,6 +129,37 @@ class AppBlockService : Service() {
         builder =
                 NotificationCompat.Builder(this, channelId)
         
+        updateNotification()
+        startForeground(notificationServiceId, createInitialNotification())
+
+        appList = PreferenceDataHelper.getInstance(applicationContext)!!.getAppList()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+            checkActivityState()
+        }
+    }
+
+    private fun createInitialNotification(): Notification {
+        val notificationIntent = Intent(applicationContext, MainActivity::class.java)
+        notificationIntent.action = "App Block"
+        notificationIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        val contentPendingIntent =
+                PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
+        
+        val stopIntent = Intent(this, AppBlockService::class.java)
+        stopIntent.action = ACTION_STOP
+        val stopPendingIntent: PendingIntent =
+                PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE)
+        
+        return builder!!.setContentTitle("App Block Service")
+                .setContentText("Monitoring apps...")
+                .setSmallIcon(R.drawable.app_logo)
+                .setContentIntent(contentPendingIntent)
+                .setOngoing(true)
+                .addAction(R.drawable.ic_close, getString(R.string.stop), stopPendingIntent)
+                .build()
+    }
+
+    private fun updateNotification() {
         // Update notification text based on current blocking status
         val preferenceHelper = PreferenceDataHelper.getInstance(applicationContext)!!
         val isTimerActive = preferenceHelper.isTimerBlockingEnabled() && 
@@ -88,6 +181,17 @@ class AppBlockService : Service() {
             resources.getString(R.string.stay_focused)
         }
         
+        val notificationIntent = Intent(applicationContext, MainActivity::class.java)
+        notificationIntent.action = "App Block"
+        notificationIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        val contentPendingIntent =
+                PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
+        
+        val stopIntent = Intent(this, AppBlockService::class.java)
+        stopIntent.action = ACTION_STOP
+        val stopPendingIntent: PendingIntent =
+                PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE)
+        
         val notification =
                 builder!!.setContentTitle(notificationTitle)
                         .setContentText(notificationText)
@@ -98,12 +202,8 @@ class AppBlockService : Service() {
                         .build()
         notification.flags =
                 notification.flags or Notification.FLAG_NO_CLEAR
-        startForeground(notificationServiceId, notification)
-
-        appList = PreferenceDataHelper.getInstance(applicationContext)!!.getAppList()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
-            checkActivityState()
-        }
+        
+        notificationManager.notify(notificationServiceId, notification)
     }
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP_MR1)
@@ -111,20 +211,8 @@ class AppBlockService : Service() {
         Timer().schedule(object : TimerTask() {
             override fun run() {
                 if (isServiceRunning) {
-
-
-
-                   /* if(isAppRunning(applicationContext!!,"com.bettride.driver")){
-                        Log.e(">>>>>>>>","krishna = if");
-                    }else{
-                        Log.e(">>>>>>>>","krishna = else");
-                    }
-                    */
-
-
-                    //appList?.put("com.bettride.driver",true);
-                    val mPackageName: String? =
-                                StringUtils.getRecentApps(applicationContext!!)
+                    try {
+                        val mPackageName: String? = StringUtils.getRecentApps(applicationContext!!)
 
                         // Check if timer blocking is enabled and timer is active
                         val preferenceDataHelper = PreferenceDataHelper.getInstance(applicationContext)!!
@@ -135,22 +223,62 @@ class AppBlockService : Service() {
                         // Block apps if either study mode is on OR timer blocking is active
                         val shouldBlockApps = preferenceDataHelper.isStudyMode() || isTimerBlockingActive
 
-                        if (appList != null && mPackageName != null && appList!![mPackageName] != null && 
-                            appList!![mPackageName]!! && shouldBlockApps &&
-                            previousPackage != mPackageName && windowManager == null) {
-                            handler.post {
-                                Log.e("krishna","$$$$$"+mPackageName);
-                                openScreen()
+                        // Validate app list and package name
+                        if (appList != null && mPackageName != null && !mPackageName.isEmpty() && 
+                            appList!![mPackageName] != null && appList!![mPackageName]!! && 
+                            shouldBlockApps && previousPackage != mPackageName && windowManager == null) {
+                            
+                            Log.d("AppBlockService", "Blocking app: $mPackageName, Timer active: $isTimerBlockingActive, Study mode: ${preferenceDataHelper.isStudyMode()}")
+                            
+                            // Double-check the blocking conditions before opening the screen
+                            if (validateBlockingConditions(preferenceDataHelper, mPackageName)) {
+                                handler.post {
+                                    openScreen()
+                                }
                             }
                         }
+                        
                         if (mPackageName != null) {
                             previousPackage = mPackageName
                         }
+                        
+                        // Refresh app list periodically to ensure we have the latest data
+                        if (System.currentTimeMillis() % 10000 < 100) { // Every ~10 seconds
+                            appList = preferenceDataHelper.getAppList()
+                        }
+                        
+                        // Log blocking status for debugging
+                        if (System.currentTimeMillis() % 30000 < 100) { // Every ~30 seconds
+                            Log.d("AppBlockService", "Service running: $isServiceRunning, Should block: $shouldBlockApps, Timer active: $isTimerBlockingActive")
+                        }
+                        
+                    } catch (e: Exception) {
+                        Log.e("AppBlockService", "Error in checkActivityState", e)
+                    }
                 } else {
                     cancel()
                 }
             }
-        }, 0, 50)
+        }, 0, 100) // Reduced interval for more responsive detection
+    }
+    
+    private fun validateBlockingConditions(preferenceDataHelper: PreferenceDataHelper, packageName: String): Boolean {
+        try {
+            // Re-validate all conditions to ensure they're still true
+            val isTimerBlockingActive = preferenceDataHelper.isTimerBlockingEnabled() && 
+                                       preferenceDataHelper.isTimerActive() &&
+                                       preferenceDataHelper.getRemainingTimerTime() > 0
+            val shouldBlockApps = preferenceDataHelper.isStudyMode() || isTimerBlockingActive
+            
+            // Check if the app is still in the blocked list
+            val appList = preferenceDataHelper.getAppList()
+            val isAppBlocked = appList?.get(packageName) == true
+            
+            return shouldBlockApps && isAppBlocked
+        } catch (e: Exception) {
+            Log.e("AppBlockService", "Error validating blocking conditions", e)
+            return false
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -249,6 +377,11 @@ class AppBlockService : Service() {
     }
 
     override fun onDestroy() {
+        try {
+            localBroadcastManager.unregisterReceiver(timerUpdateReceiver)
+        } catch (e: Exception) {
+            Log.e("AppBlockService", "Error unregistering receiver", e)
+        }
         stopMyService()
         super.onDestroy()
     }
@@ -257,32 +390,10 @@ class AppBlockService : Service() {
         stopForeground(true)
         isServiceRunning = false
         stopSelf()
-       /*
-        TODO
-        val studyModeList: List<Mode> = listAll(Mode::class.java)
-        for (i in studyModeList.size - 1 downTo 0) {
-            if (studyModeList[i].mode != null && studyModeList[i].mode == AppConstants.STUDY_MODE) {
-                updateStudyMode(studyModeList[i])
-                PreferenceDataHelper.getInstance(applicationContext)!!.setStudyMode(false)
-                stopSelf()
-                break
-            }
-        }*/
     }
 
     private fun updateStudyMode(/*studyMode: Mode*/) {
-      /*  val calendar = Calendar.getInstance()
-        val endDate = StringUtils.getTimeFormat(calendar.timeInMillis)
-        val startTime = StringUtils.getTimeMilliSecond(studyMode.startTime!!)
-        val difference = ((calendar.timeInMillis - startTime!!) / (1000 * 60)).toInt()
-        val appList = PreferenceDataHelper.getInstance(this)!!.getAppList()
-        val openAppList = getOpenAppList(appList)
-        studyMode.endTime = endDate
-        studyMode.duration = difference
-        studyMode.openAppId = openAppList
-        studyMode.save()
-
-       */
+        // TODO: Implement study mode update logic
     }
 
     private fun getOpenAppList(appList: HashMap<String, Boolean>?): String {
@@ -301,7 +412,6 @@ class AppBlockService : Service() {
     fun isAppRunning(context: Context, packageName: String): Boolean {
         val activityManager = context.getSystemService(ACTIVITY_SERVICE) as ActivityManager
         val procInfos = activityManager.runningAppProcesses
-
 
         if (procInfos != null) {
             for (processInfo in procInfos) {

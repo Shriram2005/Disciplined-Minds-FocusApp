@@ -3,6 +3,7 @@ package com.disciplined.minds.timer.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.disciplined.minds.applist.service.AppBlockService
 import com.disciplined.minds.pref.PreferenceDataHelper
 import com.disciplined.minds.timer.service.TimerService
 
@@ -22,11 +23,22 @@ class BootReceiver : BroadcastReceiver() {
                     timerIntent.action = TimerService.ACTION_START_TIMER
                     timerIntent.putExtra(TimerService.EXTRA_TIMER_DURATION, (remainingTime / 60000).toInt() + 1)
                     context.startForegroundService(timerIntent)
+                    
+                    // Also start AppBlockService to ensure blocking works
+                    val appBlockIntent = Intent(context, AppBlockService::class.java)
+                    context.startService(appBlockIntent)
                 } else {
                     // Timer expired during reboot, clean up
                     preferenceDataHelper.setTimerActive(false)
                     preferenceDataHelper.setTimerBlockingEnabled(false)
                 }
+            }
+            
+            // Check if study mode was active before reboot
+            if (preferenceDataHelper.isStudyMode()) {
+                // Restart AppBlockService for study mode
+                val appBlockIntent = Intent(context, AppBlockService::class.java)
+                context.startService(appBlockIntent)
             }
         }
     }
