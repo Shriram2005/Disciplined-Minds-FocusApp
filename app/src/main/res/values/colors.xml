@@ -1,103 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#FFBB86FC</color>
+    <!-- Core palette -->
+    <color name="brand_primary">#2468AA</color>
+    <color name="brand_secondary">#698731</color>
+    <color name="brand_tertiary">#FED743</color>
+    <color name="brand_error">#C72128</color>
+
+    <!-- Neutral & surfaces -->
+    <color name="neutral_bg">#FAFAFA</color>
+    <color name="neutral_surface">#FFFFFF</color>
+    <color name="neutral_surface_variant">#F2F4F7</color>
+    <color name="neutral_outline">#D5DAE0</color>
+    <color name="neutral_text_primary">#1F2933</color>
+    <color name="neutral_text_muted">#6B7280</color>
+
+    <!-- Dark counterparts -->
+    <color name="brand_primary_dark">#9BC3FF</color>
+    <color name="surface_dark">#1F2933</color>
+    <color name="surface_variant_dark">#243447</color>
+    <color name="text_dark">#E5E7EB</color>
+    <color name="error_dark">#FF6B6B</color>
+
+    <!-- Legacy references -->
+    <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="red">#C72128</color>
-    <color name="colorPrimaryDark">#3700B3</color>
-    <color name="colorAccent">@android:color/white</color>
-    <color name="coloryellow">#ffb937</color>
-    <color name="light_gray">#DEDEDE</color>
-    <color name="greensubmit">#00D004</color>
-    <color name="colorGray">#A8A7A7</color>
-    <color name="dgrey">#d5d5d5</color>
-    <color name="color_off_white">#B6B6B6</color>
-    <color name="colorGrey50">#fafafa</color>
-    <color name="darkgrey">#808080</color>
-    <color name="half_black">#535051</color>
-
-
-    <color name="color_blue">#6fc2fc</color>
-    <color name="color_blue_dark">#698cfa</color>
-
-    <color name="color_yellow">#ff9100</color>
-    <color name="color_yellow_dark">#fed743</color>
-
-    <color name="purple">#F056FB</color>
-    <color name="lightpurple">#fde6fe</color>
-    <color name="darkpurple">#A83CAF</color>
-
-    <color name="green">#AFE152</color>
-    <color name="lightgreen">#f5fbe9</color>
-    <color name="darkgreen">#698731</color>
-
-    <color name="orange">#FA9A6D</color>
-    <color name="lightorange">#feeee6</color>
-    <color name="darkorange">#af6b4c</color>
-
-    <color name="black">#000000</color>
-    <color name="dark_grey">#404040</color>
-    <color name="grey_item_bg">#E4E4E4</color>
-    <color name="colorTransBg">#A6000000</color>
-    <color name="colorBtnGrayLight">#f7f4f4</color>
-    <color name="dark_orange">#E85F79</color>
-    <color name="bg_item_normal_state">#fff0f0f0</color>
-    <color name="bg_group_item_dragging_state">#ffeeccff</color>
-    <color name="bg_group_item_dragging_active_state">#ffee99ff</color>
-    <color name="bg_group_item_swiping_state">#ffddccff</color>
-    <color name="bg_group_item_swiping_active_state">#ffbb99ff</color>
-    <color name="bg_group_item_expanded_pressed_state">#ff99cc99</color>
-    <color name="bg_group_item_expanded_state">#ff88dd88</color>
-    <color name="bg_group_item_normal_state">#ffddffdd</color>
-    <color name="bg_group_item_normal_pressed_state">#ff99cc99</color>
-    <color name="bg_item_dragging_state">#ffffdddd</color>
-    <color name="bg_item_dragging_active_state">#ffff9999</color>
-    <color name="bg_item_swiping_state">#ffddddff</color>
-    <color name="bg_item_swiping_active_state">#ff9999ff</color>
-    <color name="light_white">#F7F7F7</color>
-
-    <color name="colorLightAccent">#9DCFCA</color>
-    <color name="colorBlack">#000000</color>
-    <color name="colorFilled">#634975</color>
-    <color name="colorDashed">#DFA8E4</color>
-    <color name="colorDarkGray">#b2b2b2</color>
-    <color name="colorLightGray">#f6f6f6</color>
-    <color name="colorLightPurple">#fdf1ff</color>
-    <color name="colorDarkPurple">#bd68bb</color>
-
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-
-    <color name="blue">#2468AA</color>
-    <color name="pink">#C55DB8</color>
-    <color name="yellow">#FFBA2A</color>
-
-    <color name="blue_10">#6884C9</color>
-
-    <color name="black_10">#4D000000</color>
-
-    <color name="gray_10">#DADBDC</color>
-
-    <color name="pink_10">#C06DB5</color>
-
-
-    <!--uCrop Activity-->
-    <color name="ucrop_color_toolbar">#FF6E40</color>
-    <color name="ucrop_color_statusbar">#CC5833</color>
-    <color name="ucrop_color_toolbar_widget">#fff</color>
-    <color name="ucrop_color_widget">#000</color>
-    <color name="ucrop_color_widget_active">#FF6E40</color>
-    <color name="ucrop_color_widget_background">#fff</color>
-    <color name="ucrop_color_widget_text">#000</color>
-    <color name="ucrop_color_progress_wheel_line">#808080</color>
-    <color name="ucrop_color_crop_background">#000</color>
-    <!--Crop View-->
-    <color name="ucrop_color_default_crop_grid">#80ffffff</color>
-    <color name="ucrop_color_default_crop_frame">#ffffff</color>
-    <color name="ucrop_color_default_dimmed">#8c000000</color>
-    <color name="ucrop_color_default_logo">#4f212121</color>
-    <color name="colorWhite">#ffffff</color>
-
 </resources>

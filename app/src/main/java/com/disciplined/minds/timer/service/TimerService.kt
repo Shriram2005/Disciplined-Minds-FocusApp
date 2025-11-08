@@ -1,6 +1,10 @@
 package com.disciplined.minds.timer.service
 
-import android.app.*
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -14,7 +18,8 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.disciplined.minds.MainActivity
 import com.disciplined.minds.R
 import com.disciplined.minds.pref.PreferenceDataHelper
-import java.util.*
+import java.util.Timer
+import java.util.TimerTask
 import kotlin.math.max
 
 class TimerService : Service() {
@@ -30,20 +35,11 @@ class TimerService : Service() {
     private val channelName = "Timer Service"
     private val notificationId = 10125
 
-    companion object {
-        const val ACTION_START_TIMER = "com.disciplined.minds.timer.START_TIMER"
-        const val ACTION_STOP_TIMER = "com.disciplined.minds.timer.STOP_TIMER"
-        const val ACTION_EXTEND_TIMER = "com.disciplined.minds.timer.EXTEND_TIMER"
-        const val EXTRA_TIMER_DURATION = "timer_duration"
-        const val EXTRA_EXTEND_MINUTES = "extend_minutes"
-    }
-
     override fun onCreate() {
         super.onCreate()
-        preferenceDataHelper = PreferenceDataHelper.getInstance(applicationContext)!!
+        preferenceDataHelper = PreferenceDataHelper.getInstance(applicationContext)
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         localBroadcastManager = LocalBroadcastManager.getInstance(this)
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createNotificationChannel()
         }
@@ -55,9 +51,7 @@ class TimerService : Service() {
                 val duration = intent.getIntExtra(EXTRA_TIMER_DURATION, 30)
                 startTimer(duration)
             }
-            ACTION_STOP_TIMER -> {
-                stopTimer()
-            }
+            ACTION_STOP_TIMER -> stopTimer()
             ACTION_EXTEND_TIMER -> {
                 val extendMinutes = intent.getIntExtra(EXTRA_EXTEND_MINUTES, 15)
                 extendTimer(extendMinutes)
@@ -70,37 +64,27 @@ class TimerService : Service() {
 
     private fun startTimer(durationMinutes: Int) {
         val startTime = System.currentTimeMillis()
-        
-        // Update preferences first
         preferenceDataHelper.setTimerDuration(durationMinutes)
         preferenceDataHelper.setTimerStartTime(startTime)
         preferenceDataHelper.setTimerActive(true)
         preferenceDataHelper.setTimerBlockingEnabled(true)
 
-        // Send broadcast immediately after updating preferences
-        val broadcast = Intent("com.disciplined.minds.TIMER_UPDATE")
-        broadcast.putExtra("timer_started", true)
-        localBroadcastManager.sendBroadcast(broadcast)
-        sendBroadcast(broadcast)
-        
+        broadcastUpdate("timer_started")
         startForegroundNotification()
         startTimerCountdown()
     }
 
     private fun stopTimer() {
+        android.util.Log.d("TimerService", "stopTimer called - disabling blocking")
         timer?.cancel()
         timer = null
-        
-        // Update preferences first
         preferenceDataHelper.setTimerActive(false)
         preferenceDataHelper.setTimerBlockingEnabled(false)
-        
-        // Send broadcast immediately after updating preferences
-        val broadcast = Intent("com.disciplined.minds.TIMER_UPDATE")
-        broadcast.putExtra("timer_stopped", true)
-        localBroadcastManager.sendBroadcast(broadcast)
-        sendBroadcast(broadcast)
-        
+        android.util.Log.d(
+            "TimerService",
+            "Timer state updated: isActive=${preferenceDataHelper.isTimerActive()}, isBlocking=${preferenceDataHelper.isTimerBlockingEnabled()}"
+        )
+        broadcastUpdate("timer_stopped")
         stopForeground(true)
         stopSelf()
     }
@@ -108,16 +92,8 @@ class TimerService : Service() {
     private fun extendTimer(extendMinutes: Int) {
         if (preferenceDataHelper.isTimerActive()) {
             val currentDuration = preferenceDataHelper.getTimerDuration()
-            val newDuration = currentDuration + extendMinutes
-            preferenceDataHelper.setTimerDuration(newDuration)
-            
-            // Send broadcast immediately after updating preferences
-            val broadcast = Intent("com.disciplined.minds.TIMER_UPDATE")
-            broadcast.putExtra("timer_extended", true)
-            broadcast.putExtra("new_duration", newDuration as Int)
-            localBroadcastManager.sendBroadcast(broadcast)
-            sendBroadcast(broadcast)
-            
+            preferenceDataHelper.setTimerDuration(currentDuration + extendMinutes)
+            broadcastUpdate("timer_extended")
             updateNotification()
         }
     }
@@ -127,43 +103,46 @@ class TimerService : Service() {
         timer?.schedule(object : TimerTask() {
             override fun run() {
                 val remainingTime = preferenceDataHelper.getRemainingTimerTime()
-                
                 if (remainingTime <= 0) {
-                    handler.post {
-                        timerExpired()
-                    }
+                    handler.post { timerExpired() }
                     cancel()
                 } else {
                     handler.post {
                         updateNotification()
-                        
-                        // Broadcast timer update
-                        val broadcast = Intent("com.disciplined.minds.TIMER_UPDATE")
-                        broadcast.putExtra("remaining_time", remainingTime as Long)
-                        localBroadcastManager.sendBroadcast(broadcast)
-                        sendBroadcast(broadcast)
+                        broadcastUpdate("remaining_time", remainingTime)
                     }
                 }
             }
-        }, 0, 1000) // Update every second
+        }, 0, 1000)
     }
 
     private fun timerExpired() {
+        android.util.Log.d("TimerService", "Timer expired - disabling blocking")
         preferenceDataHelper.setTimerActive(false)
         preferenceDataHelper.setTimerBlockingEnabled(false)
-        
-        // Create completion notification
-        val completionNotification = createCompletionNotification()
-        notificationManager.notify(notificationId + 1, completionNotification)
-        
-        // Broadcast timer completion
-        val broadcast = Intent("com.disciplined.minds.TIMER_UPDATE")
-        broadcast.putExtra("timer_completed", true)
-        localBroadcastManager.sendBroadcast(broadcast)
-        sendBroadcast(broadcast)
-        
+        android.util.Log.d(
+            "TimerService",
+            "Timer state updated: isActive=${preferenceDataHelper.isTimerActive()}, isBlocking=${preferenceDataHelper.isTimerBlockingEnabled()}"
+        )
+        notificationManager.notify(notificationId + 1, createCompletionNotification())
+        broadcastUpdate("timer_completed")
         stopForeground(true)
         stopSelf()
+    }
+
+    private fun broadcastUpdate(event: String, remaining: Long? = null) {
+        val intent = Intent(ACTION_TIMER_UPDATE).apply {
+            when (event) {
+                "timer_started" -> putExtra("timer_started", true)
+                "timer_stopped" -> putExtra("timer_stopped", true)
+                "timer_completed" -> putExtra("timer_completed", true)
+                "timer_extended" -> putExtra("timer_extended", true)
+                "remaining_time" -> putExtra("remaining_time", remaining ?: 0L)
+            }
+        }
+        // Send to both local and system broadcast receivers for reliability
+        localBroadcastManager.sendBroadcast(intent)
+        sendBroadcast(intent)
     }
 
     private fun startForegroundNotification() {
@@ -180,42 +159,43 @@ class TimerService : Service() {
         val remainingTime = preferenceDataHelper.getRemainingTimerTime()
         val remainingMinutes = max(0, (remainingTime / 60000).toInt())
         val remainingSeconds = max(0, ((remainingTime % 60000) / 1000).toInt())
-        
         val timeText = String.format("%02d:%02d", remainingMinutes, remainingSeconds)
-        
-        val notificationIntent = Intent(applicationContext, MainActivity::class.java)
-        notificationIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
+        val notificationIntent = Intent(applicationContext, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
         val contentPendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
-        
-        val stopIntent = Intent(this, TimerService::class.java)
-        stopIntent.action = ACTION_STOP_TIMER
+
+        val stopIntent = Intent(this, TimerService::class.java).apply { action = ACTION_STOP_TIMER }
         val stopPendingIntent = PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE)
-        
-        val extendIntent = Intent(this, TimerService::class.java)
-        extendIntent.action = ACTION_EXTEND_TIMER
-        extendIntent.putExtra(EXTRA_EXTEND_MINUTES, 15)
+
+        val extendIntent = Intent(this, TimerService::class.java).apply {
+            action = ACTION_EXTEND_TIMER
+            putExtra(EXTRA_EXTEND_MINUTES, 15)
+        }
         val extendPendingIntent = PendingIntent.getService(this, 1, extendIntent, PendingIntent.FLAG_IMMUTABLE)
 
         builder = NotificationCompat.Builder(this, channelId)
         return builder!!
-            .setContentTitle("Focus Timer Active")
-            .setContentText("Time remaining: $timeText")
+            .setContentTitle(getString(R.string.focus_timer_running))
+            .setContentText(getString(R.string.time_remaining_format, timeText))
             .setSmallIcon(R.drawable.app_logo)
             .setContentIntent(contentPendingIntent)
             .setOngoing(true)
-            .addAction(R.drawable.ic_close, "Stop", stopPendingIntent)
-            .addAction(android.R.drawable.ic_input_add, "+15min", extendPendingIntent)
+            .addAction(R.drawable.ic_close, getString(R.string.stop), stopPendingIntent)
+            .addAction(android.R.drawable.ic_input_add, getString(R.string.extend_fifteen), extendPendingIntent)
             .build()
     }
 
     private fun createCompletionNotification(): Notification {
-        val notificationIntent = Intent(applicationContext, MainActivity::class.java)
-        notificationIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        val notificationIntent = Intent(applicationContext, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
         val contentPendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
 
         return NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Focus Session Complete!")
-            .setContentText("Congratulations! You've completed your focus session.")
+            .setContentTitle(getString(R.string.focus_session_complete_title))
+            .setContentText(getString(R.string.focus_session_complete_message))
             .setSmallIcon(R.drawable.app_logo)
             .setContentIntent(contentPendingIntent)
             .setAutoCancel(true)
@@ -224,13 +204,18 @@ class TimerService : Service() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannel() {
-        val channel = NotificationChannel(
-            channelId,
-            channelName,
-            NotificationManager.IMPORTANCE_DEFAULT
-        )
+        val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_DEFAULT)
         channel.lightColor = Color.BLUE
         channel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
         notificationManager.createNotificationChannel(channel)
+    }
+
+    companion object {
+        const val ACTION_TIMER_UPDATE = "com.disciplined.minds.TIMER_UPDATE"
+        const val ACTION_START_TIMER = "com.disciplined.minds.timer.START_TIMER"
+        const val ACTION_STOP_TIMER = "com.disciplined.minds.timer.STOP_TIMER"
+        const val ACTION_EXTEND_TIMER = "com.disciplined.minds.timer.EXTEND_TIMER"
+        const val EXTRA_TIMER_DURATION = "timer_duration"
+        const val EXTRA_EXTEND_MINUTES = "extend_minutes"
     }
 }

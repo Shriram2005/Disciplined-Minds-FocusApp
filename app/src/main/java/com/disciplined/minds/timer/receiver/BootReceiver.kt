@@ -8,37 +8,25 @@ import com.disciplined.minds.pref.PreferenceDataHelper
 import com.disciplined.minds.timer.service.TimerService
 
 class BootReceiver : BroadcastReceiver() {
-    
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
-            val preferenceDataHelper = PreferenceDataHelper.getInstance(context)!!
-            
-            // Check if timer was active before reboot
-            if (preferenceDataHelper.isTimerActive()) {
-                val remainingTime = preferenceDataHelper.getRemainingTimerTime()
-                
+            val helper = PreferenceDataHelper.getInstance(context)
+            if (helper.isTimerActive()) {
+                val remainingTime = helper.getRemainingTimerTime()
                 if (remainingTime > 0) {
-                    // Restart timer service
-                    val timerIntent = Intent(context, TimerService::class.java)
-                    timerIntent.action = TimerService.ACTION_START_TIMER
-                    timerIntent.putExtra(TimerService.EXTRA_TIMER_DURATION, (remainingTime / 60000).toInt() + 1)
+                    val timerIntent = Intent(context, TimerService::class.java).apply {
+                        action = TimerService.ACTION_START_TIMER
+                        putExtra(TimerService.EXTRA_TIMER_DURATION, (remainingTime / 60000).toInt() + 1)
+                    }
                     context.startForegroundService(timerIntent)
-                    
-                    // Also start AppBlockService to ensure blocking works
-                    val appBlockIntent = Intent(context, AppBlockService::class.java)
-                    context.startService(appBlockIntent)
+                    context.startService(Intent(context, AppBlockService::class.java))
                 } else {
-                    // Timer expired during reboot, clean up
-                    preferenceDataHelper.setTimerActive(false)
-                    preferenceDataHelper.setTimerBlockingEnabled(false)
+                    helper.setTimerActive(false)
+                    helper.setTimerBlockingEnabled(false)
                 }
             }
-            
-            // Check if study mode was active before reboot
-            if (preferenceDataHelper.isStudyMode()) {
-                // Restart AppBlockService for study mode
-                val appBlockIntent = Intent(context, AppBlockService::class.java)
-                context.startService(appBlockIntent)
+            if (helper.isStudyMode()) {
+                context.startService(Intent(context, AppBlockService::class.java))
             }
         }
     }

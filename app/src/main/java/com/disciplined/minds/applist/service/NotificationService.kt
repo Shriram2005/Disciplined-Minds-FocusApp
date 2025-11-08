@@ -2,29 +2,18 @@ package com.disciplined.minds.applist.service
 
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import android.util.Log
 import com.disciplined.minds.pref.PreferenceDataHelper
 
-/**
- * Created by Square Infosoft.
- */
-
-
 class NotificationService : NotificationListenerService() {
-    private val TAG = "NotificationListener"
-
-    override fun onListenerConnected() {
-        Log.i(TAG, "Notification Listener connected")
-    }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        val appList = PreferenceDataHelper.getInstance(applicationContext)!!.getAppList()
-        val isStudyMode = PreferenceDataHelper.getInstance(applicationContext)!!.isStudyMode()
+        val helper = PreferenceDataHelper.getInstance(applicationContext)
+        val appList = helper.getAppList()
+        val isStudyMode = helper.isStudyMode()
+        val isTimerBlockingActive = helper.isTimerBlockingEnabled() && helper.isTimerActive() && helper.getRemainingTimerTime() > 0
 
-        if (isStudyMode) {
-            if (appList != null && appList[sbn.packageName] != null && appList[sbn.packageName]!!) {
-                cancelNotification(sbn.key)
-            }
+        if ((isStudyMode || isTimerBlockingActive) && appList?.get(sbn.packageName) == true) {
+            cancelNotification(sbn.key)
         }
     }
 }
