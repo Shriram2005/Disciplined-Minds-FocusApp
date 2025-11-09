@@ -27,7 +27,6 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.disciplined.minds.MainActivity
 import com.disciplined.minds.R
 import com.disciplined.minds.pref.PreferenceDataHelper
@@ -35,7 +34,6 @@ import com.disciplined.minds.timer.service.TimerService
 import com.disciplined.minds.utils.StringUtils
 import java.util.Timer
 import java.util.TimerTask
-import kotlin.collections.HashMap
 
 class AppBlockService : Service() {
 
@@ -47,7 +45,7 @@ class AppBlockService : Service() {
     private var appList: HashMap<String, Boolean>? = null
     private var windowManager: WindowManager? = null
     private var overlayView: View? = null
-    private lateinit var localBroadcastManager: LocalBroadcastManager
+    private var checkActivityTimer: Timer? = null
 
     private val channelId = "genius-me-study-mode"
     private val channelName = "Study Mode"
@@ -84,9 +82,7 @@ class AppBlockService : Service() {
     override fun onCreate() {
         super.onCreate()
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        localBroadcastManager = LocalBroadcastManager.getInstance(this)
         val filter = IntentFilter(TimerService.ACTION_TIMER_UPDATE)
-        localBroadcastManager.registerReceiver(timerUpdateReceiver, filter)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(timerUpdateReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
@@ -106,10 +102,6 @@ class AppBlockService : Service() {
     }
 
     override fun onDestroy() {
-        try {
-            localBroadcastManager.unregisterReceiver(timerUpdateReceiver)
-        } catch (_: Exception) {
-        }
         try {
             unregisterReceiver(timerUpdateReceiver)
         } catch (_: Exception) {
@@ -193,6 +185,7 @@ class AppBlockService : Service() {
                 val helper = PreferenceDataHelper.getInstance(applicationContext)
                 val isTimerBlockingActive = helper.isTimerBlockingEnabled() && helper.isTimerActive() && helper.getRemainingTimerTime() > 0
                 val shouldBlockApps = helper.isStudyMode() || isTimerBlockingActive
+                val isAppBlocked = appList?.get(currentPackage) == true
 
                 Log.d(
                     TAG,
@@ -207,7 +200,7 @@ class AppBlockService : Service() {
                 }
 
                 // Only show overlay if blocking is active and app is blocked
-                if (appList?.get(currentPackage) == true) {
+                if (isAppBlocked) {
                     Log.d(TAG, "App is blocked and blocking is active - ensuring overlay")
                     handler.post { ensureOverlayVisible() }
                 } else {
@@ -223,39 +216,43 @@ class AppBlockService : Service() {
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP_MR1)
     private fun checkActivityState() {
-        Timer().schedule(object : TimerTask() {
-            override fun run() {
-                if (!isServiceRunning) {
-                    cancel()
-                    return
-                }
-                try {
-                    val packageName = StringUtils.getRecentApps(applicationContext)
-                    val preferenceHelper = PreferenceDataHelper.getInstance(applicationContext)
-                    val isTimerBlockingActive = preferenceHelper.isTimerBlockingEnabled() && preferenceHelper.isTimerActive() && preferenceHelper.getRemainingTimerTime() > 0
-                    val shouldBlockApps = preferenceHelper.isStudyMode() || isTimerBlockingActive
+        checkActivityTimer = Timer().apply {
+            schedule(object : TimerTask() {
+                override fun run() {
+                    if (!isServiceRunning) {
+                        cancel()
+                        return
+                    }
+                    try {
+                        val packageName = StringUtils.getRecentApps(applicationContext)
+                        val preferenceHelper = PreferenceDataHelper.getInstance(applicationContext)
+                        val isTimerBlockingActive =
+                            preferenceHelper.isTimerBlockingEnabled() && preferenceHelper.isTimerActive() && preferenceHelper.getRemainingTimerTime() > 0
+                        val shouldBlockApps =
+                            preferenceHelper.isStudyMode() || isTimerBlockingActive
 
-                    if (appList != null && packageName.isNotEmpty() && appList!![packageName] == true && shouldBlockApps && previousPackage != packageName) {
-                        if (validateBlockingConditions(preferenceHelper, packageName)) {
-                            handler.post { ensureOverlayVisible() }
+                        if (appList != null && packageName.isNotEmpty() && appList!![packageName] == true && shouldBlockApps && previousPackage != packageName) {
+                            if (validateBlockingConditions(preferenceHelper, packageName)) {
+                                handler.post { ensureOverlayVisible() }
+                            }
                         }
-                    }
 
-                    if (packageName.isNotEmpty()) {
-                        previousPackage = packageName
-                    }
+                        if (packageName.isNotEmpty()) {
+                            previousPackage = packageName
+                        }
 
-                    // Only remove overlay if blocking conditions are no longer met (study mode off AND timer not active)
-                    // Do NOT remove overlay just because user is on home screen or another app
-                    appList = preferenceHelper.getAppList()
-                    if (overlayView != null && !shouldBlockApps) {
-                        handler.post { removeOverlayIfPresent() }
+                        // Only remove overlay if blocking conditions are no longer met (study mode off AND timer not active)
+                        // Do NOT remove overlay just because user is on home screen or another app
+                        appList = preferenceHelper.getAppList()
+                        if (overlayView != null && !shouldBlockApps) {
+                            handler.post { removeOverlayIfPresent() }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error in checkActivityState", e)
                     }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error in checkActivityState", e)
                 }
-            }
-        }, 0, 100)
+            }, 0, 100)
+        }
     }
 
     private fun validateBlockingConditions(helper: PreferenceDataHelper, packageName: String): Boolean {
@@ -384,6 +381,7 @@ class AppBlockService : Service() {
         removeOverlayIfPresent()
         stopForeground(true)
         isServiceRunning = false
+        checkActivityTimer?.cancel()
         stopSelf()
     }
 

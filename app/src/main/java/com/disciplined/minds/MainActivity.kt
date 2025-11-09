@@ -1,5 +1,6 @@
 package com.disciplined.minds
 
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -16,7 +17,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -41,7 +41,6 @@ class MainActivity : ComponentActivity() {
         AppLockViewModel.provideFactory(application)
     }
 
-    private lateinit var localBroadcastManager: LocalBroadcastManager
     private val timerUpdateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             homeViewModel.handleTimerBroadcast()
@@ -51,7 +50,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        localBroadcastManager = LocalBroadcastManager.getInstance(this)
 
         setContent {
             DisciplinedMindsTheme {
@@ -123,19 +121,21 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onStart() {
         super.onStart()
         val filter = IntentFilter(TimerService.ACTION_TIMER_UPDATE)
-        localBroadcastManager.registerReceiver(timerUpdateReceiver, filter)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(timerUpdateReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(timerUpdateReceiver, filter)
         }
     }
 
     override fun onStop() {
         super.onStop()
         try {
-            localBroadcastManager.unregisterReceiver(timerUpdateReceiver)
+            unregisterReceiver(timerUpdateReceiver)
         } catch (_: Exception) {
         }
     }

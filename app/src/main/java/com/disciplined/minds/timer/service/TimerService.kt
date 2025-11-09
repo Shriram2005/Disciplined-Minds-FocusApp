@@ -14,7 +14,6 @@ import android.os.IBinder
 import android.os.Looper
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.disciplined.minds.MainActivity
 import com.disciplined.minds.R
 import com.disciplined.minds.pref.PreferenceDataHelper
@@ -29,7 +28,6 @@ class TimerService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private var timer: Timer? = null
     private lateinit var preferenceDataHelper: PreferenceDataHelper
-    private lateinit var localBroadcastManager: LocalBroadcastManager
 
     private val channelId = "timer-service-channel"
     private val channelName = "Timer Service"
@@ -39,7 +37,6 @@ class TimerService : Service() {
         super.onCreate()
         preferenceDataHelper = PreferenceDataHelper.getInstance(applicationContext)
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        localBroadcastManager = LocalBroadcastManager.getInstance(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createNotificationChannel()
         }
@@ -140,8 +137,7 @@ class TimerService : Service() {
                 "remaining_time" -> putExtra("remaining_time", remaining ?: 0L)
             }
         }
-        // Send to both local and system broadcast receivers for reliability
-        localBroadcastManager.sendBroadcast(intent)
+        // Send as system broadcast (LocalBroadcastManager is deprecated)
         sendBroadcast(intent)
     }
 
