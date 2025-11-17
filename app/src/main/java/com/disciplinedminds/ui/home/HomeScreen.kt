@@ -356,7 +356,8 @@ private fun TimerCard(
                     onClick = onStopTimer,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .height(56.dp)
+                        .bounceClick(),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFD32F2F)

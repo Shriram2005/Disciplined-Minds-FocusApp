@@ -88,32 +88,6 @@ fun SettingsScreen(
                 title = "App Version",
                 value = "1.0.0"
             )
-            
-            InfoCard(
-                title = "Build",
-                value = "Debug"
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // Help & Support
-            Text(
-                text = "Support",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-            
-            InfoCard(
-                title = "Developer",
-                value = "Shriram2005"
-            )
-            
-            InfoCard(
-                title = "Repository",
-                value = "Disciplined-Minds-FocusApp"
-            )
         }
     }
 }

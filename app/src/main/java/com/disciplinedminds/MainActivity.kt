@@ -13,6 +13,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
@@ -21,7 +23,11 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.SideEffect
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -76,6 +82,18 @@ class MainActivity : ComponentActivity() {
         setContent {
             val darkThemeEnabled by settingsViewModel.darkTheme.collectAsStateWithLifecycle()
             DisciplinedMindsTheme(useDarkTheme = darkThemeEnabled) {
+                // Set status bar color based on theme
+                val statusBarColor = if (darkThemeEnabled) Color.Black else Color.White
+                val darkIcons = !darkThemeEnabled
+                
+                SideEffect {
+                    val window = this.window
+                    window.statusBarColor = statusBarColor.toArgb()
+                    WindowCompat.getInsetsController(window, window.decorView).apply {
+                        isAppearanceLightStatusBars = darkIcons
+                    }
+                }
+                
                 val permissionState = permissionViewModel.permissionState.collectAsStateWithLifecycle().value
                 val homeUiState = homeViewModel.uiState.collectAsStateWithLifecycle().value
                 val selectedDuration = homeViewModel.selectedDuration.collectAsStateWithLifecycle().value

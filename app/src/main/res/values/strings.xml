@@ -70,5 +70,6 @@
     <string name="permission_usage_rationale">Usage access is required so we can detect distracting apps and block them while focus mode is active. Tap grant to allow it.</string>
     <string name="permission_grant_all">Grant required permissions</string>
     <string name="block_app_message">This App is locked under Study Mode. Stay away from any distractions and make the most of your Study Time</string>
+    <string name="default_motivational_quote">Stay focused and achieve greatness!</string>
     <string name="close">Close</string>
 </resources>
