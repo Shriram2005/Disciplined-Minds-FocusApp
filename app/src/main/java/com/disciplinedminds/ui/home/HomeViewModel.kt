@@ -51,8 +51,20 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             putExtra(TimerService.EXTRA_TIMER_DURATION, durationMinutes)
         }
         ContextCompat.startForegroundService(context, intent)
+        // Optimistically update UI so status doesn't flash "Inactive" before service broadcasts
+        val optimisticRemaining = durationMinutes * 60 * 1000L
+        _uiState.value = _uiState.value.copy(
+            isTimerActive = true,
+            remainingTimeMillis = optimisticRemaining,
+            isBlocking = true
+        )
+        startTicker()
         ensureAppBlockServiceRunning()
-        refreshState()
+        // Refresh from source of truth shortly after
+        viewModelScope.launch {
+            delay(300)
+            refreshState()
+        }
     }
 
     fun stopFocusTimer() {

@@ -26,6 +26,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -56,8 +57,8 @@ fun AppLockScreen(
     val selectedTab = remember { mutableStateOf(0) }
     val showConfirmFor: MutableState<AppLockItem?> = remember { mutableStateOf(null) }
 
-    // Light gray background matching home screen
-    val backgroundColor = Color(0xFFF5F5F5)
+    // Use themed background
+    val backgroundColor = MaterialTheme.colorScheme.background
 
     Column(
         modifier = Modifier
@@ -125,7 +126,7 @@ private fun TopBar(onBack: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Row(
@@ -153,7 +154,7 @@ private fun TopBar(onBack: () -> Unit) {
                 text = "Manage App Blocking",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -170,7 +171,7 @@ private fun StatsCard(
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 8.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Row(
@@ -204,14 +205,14 @@ private fun StatsCard(
                 Column(horizontalAlignment = Alignment.Start) {
                     Text(
                         text = lockedCount.toString(),
-                        fontSize = 24.sp,
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "Locked",
                         fontSize = 12.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                 }
             }
@@ -248,14 +249,14 @@ private fun StatsCard(
                 Column(horizontalAlignment = Alignment.Start) {
                     Text(
                         text = unlockedCount.toString(),
-                        fontSize = 24.sp,
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "Unlocked",
                         fontSize = 12.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                 }
             }
@@ -301,8 +302,8 @@ private fun TabButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val backgroundColor = if (isSelected) Color(0xFFB388FF) else Color.White
-    val textColor = if (isSelected) Color.White else Color.Black
+    val backgroundColor = if (isSelected) Color(0xFFB388FF) else MaterialTheme.colorScheme.surface
+    val textColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
 
     Card(
         modifier = modifier
@@ -310,7 +311,7 @@ private fun TabButton(
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 6.dp else 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 6.dp else 1.dp)
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -357,8 +358,8 @@ private fun AppList(
     } else {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             items(items, key = { it.packageName }) { item ->
                 AppRow(
@@ -380,19 +381,19 @@ private fun AppRow(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // App Icon
             val imageBitmap = remember(item.packageName, item.icon) {
-                item.icon?.toBitmap(width = 96, height = 96, config = null)?.asImageBitmap()
+                item.icon?.toBitmap(width = 64, height = 64, config = null)?.asImageBitmap()
             }
 
             if (imageBitmap != null) {
@@ -400,20 +401,20 @@ private fun AppRow(
                     bitmap = imageBitmap,
                     contentDescription = item.appName,
                     modifier = Modifier
-                        .size(56.dp)
+                        .size(40.dp)
                         .clip(RoundedCornerShape(12.dp))
                 )
             } else {
                 Box(
                     modifier = Modifier
-                        .size(56.dp)
+                        .size(40.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color(0xFFE0E0E0)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = item.appName.firstOrNull()?.uppercase() ?: "?",
-                        fontSize = 24.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
@@ -424,17 +425,17 @@ private fun AppRow(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = item.appName,
-                    fontSize = 16.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = item.packageName,
-                    fontSize = 12.sp,
-                    color = Color.Gray,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -447,8 +448,8 @@ private fun AppRow(
                     containerColor = if (isLockedView) Color(0xFF4CAF50) else Color(0xFFE91E63)
                 ),
                 shape = RoundedCornerShape(8.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                modifier = Modifier.height(36.dp)
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                modifier = Modifier.height(32.dp)
             ) {
                 Icon(
                     painter = painterResource(
@@ -456,12 +457,12 @@ private fun AppRow(
                     ),
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(14.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = if (isLockedView) "Unlock" else "Lock",
-                    fontSize = 13.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
@@ -479,14 +480,14 @@ private fun ConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(20.dp),
         title = {
             Text(
                 text = if (locking) "Lock $appName?" else "Unlock $appName?",
-                fontSize = 20.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black
+                color = MaterialTheme.colorScheme.onSurface
             )
         },
         text = {
@@ -496,8 +497,8 @@ private fun ConfirmDialog(
                 } else {
                     "This app will be accessible even during focus sessions."
                 },
-                fontSize = 14.sp,
-                color = Color.Gray
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
             )
         },
         confirmButton = {
@@ -518,7 +519,7 @@ private fun ConfirmDialog(
             TextButton(onClick = onDismiss) {
                 Text(
                     text = "Cancel",
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                     fontWeight = FontWeight.Medium
                 )
             }

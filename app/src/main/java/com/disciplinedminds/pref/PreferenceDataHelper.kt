@@ -23,6 +23,7 @@ class PreferenceDataHelper private constructor(context: Context) {
         private const val TIMER_START_TIME = "timer_start_time"
         private const val IS_TIMER_ACTIVE = "is_timer_active"
         private const val IS_TIMER_BLOCKING_ENABLED = "is_timer_blocking_enabled"
+        private const val IS_DARK_THEME = "is_dark_theme"
 
         @Volatile
         private var instance: PreferenceDataHelper? = null
@@ -117,4 +118,10 @@ class PreferenceDataHelper private constructor(context: Context) {
         val elapsed = System.currentTimeMillis() - startTime
         return if (elapsed >= duration) 0L else duration - elapsed
     }
+
+    fun setDarkThemeEnabled(enabled: Boolean) {
+        sharedPreferenceHelper.setBoolean(IS_DARK_THEME, enabled)
+    }
+
+    fun isDarkThemeEnabled(): Boolean = sharedPreferenceHelper.getBoolean(IS_DARK_THEME, false)
 }

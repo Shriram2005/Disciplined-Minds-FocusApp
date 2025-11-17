@@ -22,6 +22,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -52,8 +53,8 @@ fun HomeScreen(
     onManageApps: () -> Unit,
     onManualRefresh: () -> Unit
 ) {
-    // Light gray background
-    val backgroundColor = Color(0xFFF5F5F5)
+    // Themed background
+    val backgroundColor = MaterialTheme.colorScheme.background
     
     Column(
         modifier = Modifier
@@ -82,7 +83,7 @@ fun HomeScreen(
             text = "DisciplinedMinds",
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center
         )
         
@@ -92,7 +93,7 @@ fun HomeScreen(
         Text(
             text = "Stay focused, achieve more",
             fontSize = 16.sp,
-            color = Color.Gray,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
             textAlign = TextAlign.Center
         )
         
@@ -146,7 +147,7 @@ private fun StatusCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Row(
@@ -160,24 +161,24 @@ private fun StatusCard(
                     text = "App Blocking Status",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = if (uiState.isStudyMode) "Study Mode Active" else "Inactive",
+                    text = uiState.blockingStatusLabel,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (uiState.isStudyMode) Color(0xFF6B8E23) else Color.Gray
+                    color = if (uiState.isBlocking) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
             }
             
             // Check icon in green circle
-            if (uiState.isStudyMode) {
+            if (uiState.isBlocking) {
                 Box(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF6B8E23)),
+                        .background(MaterialTheme.colorScheme.primary),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -204,7 +205,7 @@ private fun TimerCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
@@ -217,7 +218,7 @@ private fun TimerCard(
                 text = "Focus Timer",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.align(Alignment.Start)
             )
             
@@ -228,7 +229,7 @@ private fun TimerCard(
                 text = uiState.timerDisplay,
                 fontSize = 64.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFFB388FF),
+                color = MaterialTheme.colorScheme.primary,
                 letterSpacing = 2.sp
             )
             
@@ -239,7 +240,7 @@ private fun TimerCard(
                 Text(
                     text = "Select Duration",
                     fontSize = 14.sp,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     modifier = Modifier.align(Alignment.Start)
                 )
                 
@@ -269,7 +270,7 @@ private fun TimerCard(
                         .height(56.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF6B8E23)
+                        containerColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
                     Text(
@@ -310,8 +311,8 @@ private fun DurationButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val backgroundColor = if (isSelected) Color(0xFFB388FF) else Color(0xFFE0E0E0)
-    val textColor = if (isSelected) Color.White else Color.Black
+    val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+    val textColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
     
     val label = when (duration) {
         30 -> "30MIN"
@@ -345,7 +346,7 @@ private fun QuickActionsCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
@@ -357,7 +358,7 @@ private fun QuickActionsCard(
                 text = "Quick Actions",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black
+                color = MaterialTheme.colorScheme.onSurface
             )
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -370,7 +371,7 @@ private fun QuickActionsCard(
                     .height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFB388FF)
+                    containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
                 Icon(
