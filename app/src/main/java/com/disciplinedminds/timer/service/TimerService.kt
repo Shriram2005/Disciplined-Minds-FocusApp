@@ -175,7 +175,7 @@ class TimerService : Service() {
         return builder!!
             .setContentTitle(getString(R.string.focus_timer_running))
             .setContentText(getString(R.string.time_remaining_format, timeText))
-            .setSmallIcon(R.drawable.app_logo)
+            .setSmallIcon(R.drawable.app_logo2)
             .setContentIntent(contentPendingIntent)
             .setOngoing(true)
             .addAction(R.drawable.ic_close, getString(R.string.stop), stopPendingIntent)
@@ -192,7 +192,7 @@ class TimerService : Service() {
         return NotificationCompat.Builder(this, channelId)
             .setContentTitle(getString(R.string.focus_session_complete_title))
             .setContentText(getString(R.string.focus_session_complete_message))
-            .setSmallIcon(R.drawable.app_logo)
+            .setSmallIcon(R.drawable.app_logo2)
             .setContentIntent(contentPendingIntent)
             .setAutoCancel(true)
             .build()

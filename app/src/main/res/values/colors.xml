@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Core palette -->
-    <color name="brand_primary">#2468AA</color>
+    <color name="brand_primary">#DC2626</color>
     <color name="brand_secondary">#698731</color>
     <color name="brand_tertiary">#FED743</color>
     <color name="brand_error">#C72128</color>
@@ -15,7 +15,7 @@
     <color name="neutral_text_muted">#6B7280</color>
 
     <!-- Dark counterparts -->
-    <color name="brand_primary_dark">#9BC3FF</color>
+    <color name="brand_primary_dark">#EF4444</color>
     <color name="surface_dark">#1F2933</color>
     <color name="surface_variant_dark">#243447</color>
     <color name="text_dark">#E5E7EB</color>
