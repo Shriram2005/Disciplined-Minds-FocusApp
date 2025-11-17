@@ -5,13 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.disciplined.minds"
-    compileSdk {
-        version = release(36)
-    }
+    namespace = "com.disciplinedminds"
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.disciplined.minds"
+        applicationId = "com.disciplinedminds"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

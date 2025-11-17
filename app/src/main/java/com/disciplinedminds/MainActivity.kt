@@ -1,47 +1,169 @@
 package com.disciplinedminds
 
+import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.activity.viewModels
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.disciplinedminds.timer.service.TimerService
+import com.disciplinedminds.ui.applock.AppLockScreen
+import com.disciplinedminds.ui.applock.AppLockViewModel
+import com.disciplinedminds.ui.home.HomeScreen
+import com.disciplinedminds.ui.home.HomeViewModel
+import com.disciplinedminds.ui.permission.PermissionScreen
+import com.disciplinedminds.ui.permission.PermissionViewModel
 import com.disciplinedminds.ui.theme.DisciplinedMindsTheme
 
 class MainActivity : ComponentActivity() {
+
+    private val permissionViewModel: PermissionViewModel by viewModels {
+        PermissionViewModel.provideFactory(application)
+    }
+    private val homeViewModel: HomeViewModel by viewModels {
+        HomeViewModel.provideFactory(application)
+    }
+    private val appLockViewModel: AppLockViewModel by viewModels {
+        AppLockViewModel.provideFactory(application)
+    }
+
+    private val timerUpdateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            homeViewModel.handleTimerBroadcast()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             DisciplinedMindsTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                val permissionState = permissionViewModel.permissionState.collectAsStateWithLifecycle().value
+                val homeUiState = homeViewModel.uiState.collectAsStateWithLifecycle().value
+                val selectedDuration = homeViewModel.selectedDuration.collectAsStateWithLifecycle().value
+                val appLockState = appLockViewModel.uiState.collectAsStateWithLifecycle().value
+                val navController = rememberNavController()
+
+                LaunchedEffect(permissionState.allGranted) {
+                    if (permissionState.allGranted) {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Permission.route) { inclusive = true }
+                        }
+                    } else {
+                        navController.navigate(Screen.Permission.route) {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        }
+                    }
+                }
+
+                Surface {
+                    NavHost(
+                        navController = navController,
+                        startDestination = Screen.Permission.route
+                    ) {
+                        composable(Screen.Permission.route) {
+                            PermissionScreen(
+                                state = permissionState,
+                                onRequestUsageAccess = { openUsageAccessSettings() },
+                                onRequestOverlayPermission = { openOverlaySettings() },
+                                onRequestNotificationAccess = { openNotificationListenerSettings() },
+                                onContinue = {
+                                    permissionViewModel.refreshPermissions()
+                                    if (permissionState.allGranted) {
+                                        navController.navigate(Screen.Home.route) {
+                                            popUpTo(Screen.Permission.route) { inclusive = true }
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                        composable(Screen.Home.route) {
+                            HomeScreen(
+                                uiState = homeUiState,
+                                selectedDuration = selectedDuration,
+                                onDurationSelected = { homeViewModel.updateSelectedDuration(it) },
+                                onStartTimer = { homeViewModel.startFocusTimer() },
+                                onStopTimer = { homeViewModel.stopFocusTimer() },
+                                onExtendTimer = { homeViewModel.extendFocusTimer() },
+                                onToggleStudyMode = { homeViewModel.toggleStudyMode(it) },
+                                onManageApps = {
+                                    appLockViewModel.loadApplications()
+                                    navController.navigate(Screen.AppLock.route)
+                                },
+                                onManualRefresh = { homeViewModel.refreshState() }
+                            )
+                        }
+                        composable(Screen.AppLock.route) {
+                            AppLockScreen(
+                                state = appLockState,
+                                onToggleLock = { appLockViewModel.toggleLock(it) },
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+                    }
                 }
             }
         }
     }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    override fun onStart() {
+        super.onStart()
+        val filter = IntentFilter(TimerService.ACTION_TIMER_UPDATE)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(timerUpdateReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(timerUpdateReceiver, filter)
+        }
+    }
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    DisciplinedMindsTheme {
-        Greeting("Android")
+    override fun onStop() {
+        super.onStop()
+        try {
+            unregisterReceiver(timerUpdateReceiver)
+        } catch (_: Exception) {
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        permissionViewModel.refreshPermissions()
+        homeViewModel.refreshState()
+    }
+
+    private fun openUsageAccessSettings() {
+        val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+        startActivity(intent)
+    }
+
+    private fun openOverlaySettings() {
+        val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+        startActivity(intent)
+    }
+
+    private fun openNotificationListenerSettings() {
+        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+        ContextCompat.startActivity(this, intent, null)
+    }
+
+    private enum class Screen(val route: String) {
+        Permission("permission"),
+        Home("home"),
+        AppLock("applock")
     }
 }
