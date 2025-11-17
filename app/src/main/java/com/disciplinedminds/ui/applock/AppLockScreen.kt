@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -26,11 +25,14 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -47,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
 import com.disciplinedminds.R
+import com.disciplinedminds.ui.components.bounceClick
 
 @Composable
 fun AppLockScreen(
@@ -64,7 +67,6 @@ fun AppLockScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(backgroundColor)
-            .statusBarsPadding() // Add status bar padding
     ) {
         // Top App Bar
         TopBar(onBack = onBack)
@@ -121,44 +123,21 @@ fun AppLockScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TopBar(onBack: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Back button
-            IconButton(
-                onClick = onBack,
-                modifier = Modifier.size(40.dp)
-            ) {
+    TopAppBar(
+        title = { Text(text = "Manage App Blocking") },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_arrow_back),
-                    contentDescription = "Back",
-                    tint = Color(0xFFB388FF)
+                    contentDescription = "Back"
                 )
             }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Title
-            Text(
-                text = "Manage App Blocking",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f)
-            )
         }
-    }
+    )
+    HorizontalDivider()
 }
 
 @Composable
@@ -449,7 +428,9 @@ private fun AppRow(
                 ),
                 shape = RoundedCornerShape(8.dp),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                modifier = Modifier.height(32.dp)
+                modifier = Modifier
+                    .height(32.dp)
+                    .bounceClick()
             ) {
                 Icon(
                     painter = painterResource(

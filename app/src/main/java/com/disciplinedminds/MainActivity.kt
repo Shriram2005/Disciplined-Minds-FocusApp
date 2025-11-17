@@ -39,6 +39,12 @@ import com.disciplinedminds.ui.settings.SettingsScreen
 import com.disciplinedminds.ui.settings.SettingsViewModel
 import androidx.compose.material3.Text
 import androidx.compose.material3.Scaffold
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.ui.res.painterResource
 import com.disciplinedminds.R
 
@@ -90,6 +96,7 @@ class MainActivity : ComponentActivity() {
 
                 Surface {
                     Scaffold(
+                        contentWindowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Bottom),
                         bottomBar = {
                             if (permissionState.allGranted) {
                                 NavigationBar {
@@ -122,7 +129,8 @@ class MainActivity : ComponentActivity() {
                     ) { paddingValues ->
                         NavHost(
                             navController = navController,
-                            startDestination = Screen.Permission.route
+                            startDestination = Screen.Permission.route,
+                            modifier = Modifier.padding(paddingValues)
                         ) {
                             composable(Screen.Permission.route) {
                                 PermissionScreen(

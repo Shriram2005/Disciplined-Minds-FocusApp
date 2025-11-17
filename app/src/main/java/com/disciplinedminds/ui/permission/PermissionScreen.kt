@@ -30,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.disciplinedminds.R
+import com.disciplinedminds.ui.components.bounceClick
 
 @Composable
 fun PermissionScreen(
@@ -102,7 +103,9 @@ fun PermissionScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .bounceClick(),
             enabled = state.allGranted,
             onClick = onContinue,
             contentPadding = PaddingValues(vertical = 14.dp)
@@ -167,7 +170,9 @@ private fun PermissionCard(
             Button(
                 onClick = onClick,
                 enabled = optional || !granted,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .bounceClick(),
                 contentPadding = PaddingValues(vertical = 12.dp)
             ) {
                 Text(text = actionText)

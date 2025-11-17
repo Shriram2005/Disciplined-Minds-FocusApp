@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -22,12 +21,18 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.disciplinedminds.R
+import com.disciplinedminds.ui.components.bounceClick
 
 private val DurationOptions = listOf(30, 60, 90, 120)
 
@@ -55,18 +61,18 @@ fun HomeScreen(
 ) {
     // Themed background
     val backgroundColor = MaterialTheme.colorScheme.background
+    var showConfirmDialog by remember { mutableStateOf(false) }
     
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(backgroundColor)
-            .statusBarsPadding() // Add status bar padding to prevent overlap
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Header with Logo and Title
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(32.dp))
         
         // Brain Logo
         Icon(
@@ -114,7 +120,8 @@ fun HomeScreen(
             onDurationSelected = onDurationSelected,
             onStartTimer = onStartTimer,
             onStopTimer = onStopTimer,
-            onExtendTimer = onExtendTimer
+            onExtendTimer = onExtendTimer,
+            onShowConfirmDialog = { showConfirmDialog = true }
         )
         
         Spacer(modifier = Modifier.height(20.dp))
@@ -137,6 +144,67 @@ fun HomeScreen(
         //     onManageApps = onManageApps
         // )
     }
+    
+    // Confirmation Dialog
+    if (showConfirmDialog) {
+        StartTimerConfirmDialog(
+            duration = selectedDuration,
+            onConfirm = {
+                showConfirmDialog = false
+                onStartTimer()
+            },
+            onDismiss = { showConfirmDialog = false }
+        )
+    }
+}
+
+@Composable
+private fun StartTimerConfirmDialog(
+    duration: Int,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val durationText = when (duration) {
+        30 -> "30 minutes"
+        60 -> "1 hour"
+        90 -> "1 hour 30 minutes"
+        120 -> "2 hours"
+        else -> "$duration minutes"
+    }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Start Focus Timer?",
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Text(
+                text = "This will start a $durationText focus session and block all locked apps. You won't be able to access them until the timer ends.\n\nAre you ready to focus?"
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Text("START", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss
+            ) {
+                Text("CANCEL")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(16.dp)
+    )
 }
 
 @Composable
@@ -200,7 +268,8 @@ private fun TimerCard(
     onDurationSelected: (Int) -> Unit,
     onStartTimer: () -> Unit,
     onStopTimer: () -> Unit,
-    onExtendTimer: () -> Unit
+    onExtendTimer: () -> Unit,
+    onShowConfirmDialog: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -264,10 +333,11 @@ private fun TimerCard(
                 
                 // Start Timer Button
                 Button(
-                    onClick = onStartTimer,
+                    onClick = onShowConfirmDialog,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .height(56.dp)
+                        .bounceClick(),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
@@ -368,7 +438,8 @@ private fun QuickActionsCard(
                 onClick = onManageApps,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
+                    .height(56.dp)
+                    .bounceClick(),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary
