@@ -32,6 +32,7 @@ import com.disciplinedminds.R
 import com.disciplinedminds.pref.PreferenceDataHelper
 import com.disciplinedminds.timer.service.TimerService
 import com.disciplinedminds.utils.StringUtils
+import com.disciplinedminds.utils.MotivationalQuotes
 import java.util.Timer
 import java.util.TimerTask
 
@@ -290,6 +291,8 @@ class AppBlockService : Service() {
         }
 
         if (overlayView != null) {
+            // Update the quote even if overlay already exists
+            overlayView?.findViewById<TextView>(R.id.tvMotivationalQuote)?.text = MotivationalQuotes.getRandomQuote()
             return
         }
 
@@ -344,6 +347,9 @@ class AppBlockService : Service() {
         overlayView?.findViewById<TextView>(R.id.tvClose)?.setOnClickListener {
             removeOverlayIfPresent()
         }
+
+        // Set a random motivational quote each time the overlay is shown
+        overlayView?.findViewById<TextView>(R.id.tvMotivationalQuote)?.text = MotivationalQuotes.getRandomQuote()
 
         try {
             windowManager?.addView(overlayView, params)
