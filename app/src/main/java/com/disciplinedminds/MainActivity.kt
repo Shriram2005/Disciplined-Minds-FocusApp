@@ -43,6 +43,8 @@ import com.disciplinedminds.ui.permission.PermissionViewModel
 import com.disciplinedminds.ui.theme.DisciplinedMindsTheme
 import com.disciplinedminds.ui.settings.SettingsScreen
 import com.disciplinedminds.ui.settings.SettingsViewModel
+import com.disciplinedminds.ui.schedule.ScheduleScreen
+import com.disciplinedminds.ui.schedule.ScheduleViewModel
 import androidx.compose.material3.Text
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
@@ -67,6 +69,9 @@ class MainActivity : ComponentActivity() {
     }
     private val settingsViewModel: SettingsViewModel by viewModels {
         SettingsViewModel.provideFactory(application)
+    }
+    private val scheduleViewModel: ScheduleViewModel by viewModels {
+        ScheduleViewModel.provideFactory(application)
     }
 
     private val timerUpdateReceiver = object : BroadcastReceiver() {
@@ -98,6 +103,7 @@ class MainActivity : ComponentActivity() {
                 val homeUiState = homeViewModel.uiState.collectAsStateWithLifecycle().value
                 val selectedDuration = homeViewModel.selectedDuration.collectAsStateWithLifecycle().value
                 val appLockState = appLockViewModel.uiState.collectAsStateWithLifecycle().value
+                val schedules by scheduleViewModel.schedules.collectAsStateWithLifecycle()
                 val navController = rememberNavController()
 
                 LaunchedEffect(permissionState.allGranted) {
@@ -136,9 +142,15 @@ class MainActivity : ComponentActivity() {
                                         label = { Text("Locks") }
                                     )
                                     NavigationBarItem(
+                                        selected = currentRoute == Screen.Schedule.route,
+                                        onClick = { navController.navigate(Screen.Schedule.route) },
+                                        icon = { Icon(painter = painterResource(R.drawable.ic_schedule), contentDescription = "Schedule") },
+                                        label = { Text("Schedule") }
+                                    )
+                                    NavigationBarItem(
                                         selected = currentRoute == Screen.Settings.route,
                                         onClick = { navController.navigate(Screen.Settings.route) },
-                                        icon = { Icon(painter = painterResource(R.drawable.ic_timer), contentDescription = "Settings") },
+                                        icon = { Icon(painter = painterResource(R.drawable.ic_settings), contentDescription = "Settings") },
                                         label = { Text("Settings") }
                                     )
                                 }
@@ -187,6 +199,15 @@ class MainActivity : ComponentActivity() {
                                     state = appLockState,
                                     onToggleLock = { appLockViewModel.toggleLock(it) },
                                     onBack = { /* Bottom nav handles navigation */ navController.navigate(Screen.Home.route) }
+                                )
+                            }
+                            composable(Screen.Schedule.route) {
+                                ScheduleScreen(
+                                    schedules = schedules,
+                                    onAddSchedule = { scheduleViewModel.addSchedule(it) },
+                                    onUpdateSchedule = { scheduleViewModel.updateSchedule(it) },
+                                    onDeleteSchedule = { scheduleViewModel.deleteSchedule(it) },
+                                    onToggleSchedule = { scheduleViewModel.toggleSchedule(it) }
                                 )
                             }
                             composable(Screen.Settings.route) {
@@ -247,6 +268,7 @@ class MainActivity : ComponentActivity() {
         Permission("permission"),
         Home("home"),
         AppLock("applock"),
+        Schedule("schedule"),
         Settings("settings")
     }
 }

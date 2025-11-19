@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
@@ -71,6 +72,16 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <!-- Ensure services restart after app update -->
                 <action android:name="android.intent.action.PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".ui.schedule.ScheduleReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.disciplinedminds.ACTION_START_TIMER" />
+                <action android:name="com.disciplinedminds.ACTION_STOP_TIMER" />
             </intent-filter>
         </receiver>
     </application>
