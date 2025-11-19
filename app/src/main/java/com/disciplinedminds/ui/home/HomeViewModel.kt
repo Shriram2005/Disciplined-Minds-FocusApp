@@ -56,6 +56,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(
             isTimerActive = true,
             remainingTimeMillis = optimisticRemaining,
+            totalDurationMinutes = durationMinutes,
             isBlocking = true
         )
         startTicker()
@@ -118,10 +119,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val lockedCount = appList?.values?.count { it } ?: 0
         val unlockedCount = appList?.size?.minus(lockedCount) ?: 0
         val isBlocking = isStudyMode || isTimerActive
+        val totalDuration = if (isTimerActive) preferenceDataHelper.getTimerDuration() else 0
 
         _uiState.value = HomeUiState(
             isTimerActive = isTimerActive,
             remainingTimeMillis = remainingTime,
+            totalDurationMinutes = totalDuration,
             isBlocking = isBlocking,
             isStudyMode = isStudyMode,
             lockedApps = lockedCount,
@@ -181,6 +184,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 data class HomeUiState(
     val isTimerActive: Boolean = false,
     val remainingTimeMillis: Long = 0L,
+    val totalDurationMinutes: Int = 0,
     val isBlocking: Boolean = false,
     val isStudyMode: Boolean = false,
     val lockedApps: Int = 0,

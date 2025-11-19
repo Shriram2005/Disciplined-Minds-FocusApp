@@ -1,5 +1,8 @@
 package com.disciplinedminds.ui.home
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,14 +20,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
+// Home screen redesigned to be minimalist & premium
 import androidx.compose.material3.Text
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
@@ -36,7 +41,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -44,6 +55,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.disciplinedminds.R
 import com.disciplinedminds.ui.components.bounceClick
+import kotlin.math.cos
+import kotlin.math.sin
 
 private val DurationOptions = listOf(30, 60, 90, 120)
 
@@ -55,97 +68,60 @@ fun HomeScreen(
     onStartTimer: () -> Unit,
     onStopTimer: () -> Unit,
     onExtendTimer: () -> Unit,
-    onToggleStudyMode: (Boolean) -> Unit,
+    onToggleStudyMode: (Boolean) -> Unit, // kept for future use
     onManageApps: () -> Unit,
-    onManualRefresh: () -> Unit
+    onManualRefresh: () -> Unit // kept for future use
 ) {
-    // Themed background
-    val backgroundColor = MaterialTheme.colorScheme.background
+    // Subtle premium gradient background
+    val gradient = Brush.verticalGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.background,
+            MaterialTheme.colorScheme.background.copy(alpha = 0.92f),
+            MaterialTheme.colorScheme.background
+        )
+    )
     var showConfirmDialog by remember { mutableStateOf(false) }
-    
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(backgroundColor)
+            .background(gradient)
+            .windowInsetsPadding(WindowInsets.statusBars)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(horizontal = 20.dp, vertical = 28.dp)
     ) {
-        // Header with Logo and Title
-        Spacer(modifier = Modifier.height(32.dp))
-        
-        // Brain Logo
-        Icon(
-            painter = painterResource(id = R.drawable.app_logo),
-            contentDescription = "App Logo",
-            modifier = Modifier.size(100.dp),
-            tint = Color.Unspecified
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // App Title
-        Text(
-            text = "DisciplinedMinds",
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center
-        )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        // Tagline
-        Text(
-            text = "Stay focused, achieve more",
-            fontSize = 16.sp,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-            textAlign = TextAlign.Center
-        )
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
-        // App Blocking Status Card
-        StatusCard(
-            uiState = uiState,
-            onManualRefresh = onManualRefresh
-        )
-        
-        Spacer(modifier = Modifier.height(20.dp))
-        
-        // Focus Timer Card
-        TimerCard(
-            uiState = uiState,
-            selectedDuration = selectedDuration,
-            onDurationSelected = onDurationSelected,
-            onStartTimer = onStartTimer,
-            onStopTimer = onStopTimer,
-            onExtendTimer = onExtendTimer,
-            onShowConfirmDialog = { showConfirmDialog = true }
-        )
-        
-        Spacer(modifier = Modifier.height(20.dp))
-        
-        // Quick Actions Card
-        QuickActionsCard(
-            onManageApps = onManageApps
-        )
-        
-        // Study Mode Card
-        // StudyModeCard(
-        //     isStudyMode = uiState.isStudyMode,
-        //     onToggle = onToggleStudyMode
-        // )
-        
-        // Manage Apps Card
-        // ManageAppsCard(
-        //     lockedCount = uiState.lockedApps,
-        //     unlockedCount = uiState.unlockedApps,
-        //     onManageApps = onManageApps
-        // )
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Brand title minimal
+            Text(
+                text = "DisciplinedMinds",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground,
+                letterSpacing = 0.5.sp
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = if (uiState.isTimerActive) "Focused session in progress" else "Select a duration & begin",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f)
+            )
+            Spacer(modifier = Modifier.height(28.dp))
+            CircularTimerCard(
+                uiState = uiState,
+                selectedDuration = selectedDuration,
+                onDurationSelected = onDurationSelected,
+                onStartTimer = { showConfirmDialog = true },
+                onStopTimer = onStopTimer,
+                onExtendTimer = onExtendTimer
+            )
+            Spacer(modifier = Modifier.height(28.dp))
+            ManageAppsAction(onManageApps)
+            Spacer(modifier = Modifier.height(12.dp))
+        }
     }
     
-    // Confirmation Dialog
     if (showConfirmDialog) {
         StartTimerConfirmDialog(
             duration = selectedDuration,
@@ -155,6 +131,280 @@ fun HomeScreen(
             },
             onDismiss = { showConfirmDialog = false }
         )
+    }
+}
+
+@Composable
+private fun CircularTimerCard(
+    uiState: HomeUiState,
+    selectedDuration: Int,
+    onDurationSelected: (Int) -> Unit,
+    onStartTimer: () -> Unit,
+    onStopTimer: () -> Unit,
+    onExtendTimer: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(8.dp, RoundedCornerShape(28.dp)),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Header
+            Text(
+                text = if (uiState.isTimerActive) "FOCUS MODE" else "READY TO FOCUS",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                letterSpacing = 1.5.sp
+            )
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            // Circular Progress
+            CircularTimer(
+                timeText = uiState.timerDisplay,
+                progress = calculateProgress(uiState),
+                isActive = uiState.isTimerActive
+            )
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            if (!uiState.isTimerActive) {
+                // Duration Selection
+                Text(
+                    text = "Choose your focus duration",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    DurationOptions.forEach { duration ->
+                        ModernDurationButton(
+                            duration = duration,
+                            isSelected = duration == selectedDuration,
+                            onClick = { onDurationSelected(duration) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Start Button
+                Button(
+                    onClick = onStartTimer,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .bounceClick(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_timer),
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "START FOCUS",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        letterSpacing = 1.sp
+                    )
+                }
+            } else {
+                // Timer Active Controls
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Extend Button
+                    Button(
+                        onClick = onExtendTimer,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp)
+                            .bounceClick(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Text(
+                            text = "+15",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    
+                    // Stop Button
+                    Button(
+                        onClick = onStopTimer,
+                        modifier = Modifier
+                            .weight(2f)
+                            .height(56.dp)
+                            .bounceClick(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFEF4444)
+                        )
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_close),
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "STOP",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            letterSpacing = 1.sp
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CircularTimer(
+    timeText: String,
+    progress: Float,
+    isActive: Boolean
+) {
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = tween(durationMillis = 800),
+        label = "progress"
+    )
+    
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
+    
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.size(240.dp)
+    ) {
+        Canvas(modifier = Modifier.size(240.dp)) {
+            val strokeWidth = 20.dp.toPx()
+            val radius = (size.minDimension - strokeWidth) / 2
+            val center = Offset(size.width / 2, size.height / 2)
+            
+            // Background circle
+            drawCircle(
+                color = surfaceVariant,
+                radius = radius,
+                center = center,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+            )
+            
+            // Progress arc
+            if (isActive && animatedProgress > 0) {
+                drawArc(
+                    color = primaryColor,
+                    startAngle = -90f,
+                    sweepAngle = 360f * animatedProgress,
+                    useCenter = false,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                    topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
+                    size = Size(size.width - strokeWidth, size.height - strokeWidth)
+                )
+            }
+        }
+        
+        // Time text in center
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = timeText,
+                fontSize = 48.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                letterSpacing = 2.sp
+            )
+            if (isActive) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "remaining",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModernDurationButton(
+    duration: Int,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val backgroundColor = if (isSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+    val textColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+    
+    val label = when (duration) {
+        30 -> "30m"
+        60 -> "1h"
+        90 -> "1.5h"
+        120 -> "2h"
+        else -> "${duration}m"
+    }
+    
+    Box(
+        modifier = modifier
+            .height(52.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(backgroundColor)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            fontSize = 15.sp,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+            color = textColor
+        )
+    }
+}
+
+private fun calculateProgress(uiState: HomeUiState): Float {
+    if (!uiState.isTimerActive || uiState.totalDurationMinutes == 0) return 0f
+    
+    val remainingSeconds = (uiState.remainingTimeMillis / 1000).toFloat()
+    val totalSeconds = (uiState.totalDurationMinutes * 60).toFloat()
+    
+    return if (totalSeconds > 0) {
+        (remainingSeconds / totalSeconds).coerceIn(0f, 1f)
+    } else {
+        0f
     }
 }
 
@@ -411,184 +661,31 @@ private fun DurationButton(
 }
 
 @Composable
-private fun QuickActionsCard(
-    onManageApps: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
+private fun ManageAppsAction(onManageApps: () -> Unit) {
+    Button(
+        onClick = onManageApps,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .bounceClick(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary
+        )
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
-        ) {
-            Text(
-                text = "Quick Actions",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Manage App Blocking Button
-            Button(
-                onClick = onManageApps,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .bounceClick(),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_lock),
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "MANAGE APP BLOCKING",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
-        }
+        Icon(
+            painter = painterResource(id = R.drawable.ic_lock),
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(22.dp)
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+            text = "MANAGE APPS",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
     }
 }
 
-@Composable
-private fun StudyModeCard(
-    isStudyMode: Boolean,
-    onToggle: (Boolean) -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Study Mode",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    modifier = Modifier.weight(1f)
-                )
-                
-                Switch(
-                    checked = isStudyMode,
-                    onCheckedChange = { onToggle(it) },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color(0xFF6B8E23),
-                        checkedTrackColor = Color(0xFF6B8E23)
-                    )
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ManageAppsCard(
-    lockedCount: Int,
-    unlockedCount: Int,
-    onManageApps: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
-        ) {
-            Text(
-                text = "Manage Apps",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Locked Apps",
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                    Text(
-                        text = lockedCount.toString(),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                }
-                
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Unlocked Apps",
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                    Text(
-                        text = unlockedCount.toString(),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Button(
-                onClick = onManageApps,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFB388FF)
-                )
-            ) {
-                Text(
-                    text = "MANAGE APPS",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
-        }
-    }
-}
