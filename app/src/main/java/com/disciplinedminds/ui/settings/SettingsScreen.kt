@@ -1,6 +1,5 @@
 package com.disciplinedminds.ui.settings
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -38,12 +37,9 @@ fun SettingsScreen(
     darkTheme: Boolean,
     onToggleDarkTheme: (Boolean) -> Unit
 ) {
-    val backgroundColor = MaterialTheme.colorScheme.background
-    
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(backgroundColor)
     ) {
         // Top App Bar
         TopAppBar(

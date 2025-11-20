@@ -40,6 +40,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.painterResource
@@ -60,13 +62,21 @@ fun AppLockScreen(
     val selectedTab = remember { mutableStateOf(0) }
     val showConfirmFor: MutableState<AppLockItem?> = remember { mutableStateOf(null) }
 
-    // Use themed background
-    val backgroundColor = MaterialTheme.colorScheme.background
+    // Premium gradient similar to Home screen
+    val gradient = Brush.linearGradient(
+        colors = listOf(
+            Color(0xFF1a1a2e),
+            Color(0xFF16213e),
+            Color(0xFF0f3460)
+        ),
+        start = Offset(0f, 0f),
+        end = Offset(1000f, 1000f)
+    )
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(backgroundColor)
+            .background(gradient)
     ) {
         // Top App Bar
         TopBar(onBack = onBack)

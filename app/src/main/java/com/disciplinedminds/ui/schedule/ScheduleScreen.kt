@@ -14,6 +14,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -50,10 +52,21 @@ fun ScheduleScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var editingSchedule by remember { mutableStateOf<Schedule?>(null) }
 
+    // Premium gradient similar to Home screen
+    val gradient = Brush.linearGradient(
+        colors = listOf(
+            Color(0xFF1a1a2e),
+            Color(0xFF16213e),
+            Color(0xFF0f3460)
+        ),
+        start = Offset(0f, 0f),
+        end = Offset(1000f, 1000f)
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(gradient)
             .windowInsetsPadding(WindowInsets.statusBars)
             .padding(20.dp)
     ) {
@@ -62,7 +75,7 @@ fun ScheduleScreen(
             text = "Focus Schedules",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
+            color = Color.White
         )
         
         Spacer(modifier = Modifier.height(8.dp))
@@ -70,7 +83,7 @@ fun ScheduleScreen(
         Text(
             text = "Automatically start focus sessions at scheduled times",
             fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+            color = Color.White.copy(alpha = 0.75f)
         )
         
         Spacer(modifier = Modifier.height(24.dp))

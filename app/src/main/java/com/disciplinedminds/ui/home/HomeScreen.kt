@@ -72,23 +72,68 @@ fun HomeScreen(
     onManageApps: () -> Unit,
     onManualRefresh: () -> Unit // kept for future use
 ) {
-    // Subtle premium gradient background
-    val gradient = Brush.verticalGradient(
-        colors = listOf(
-            MaterialTheme.colorScheme.background,
-            MaterialTheme.colorScheme.background.copy(alpha = 0.92f),
-            MaterialTheme.colorScheme.background
-        )
-    )
     var showConfirmDialog by remember { mutableStateOf(false) }
+    
+    // Premium gradient background
+    val gradient = Brush.linearGradient(
+        colors = listOf(
+            Color(0xFF1a1a2e),
+            Color(0xFF16213e),
+            Color(0xFF0f3460)
+        ),
+        start = Offset(0f, 0f),
+        end = Offset(1000f, 1000f)
+    )
+    
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(gradient)
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 28.dp)
+        modifier = Modifier.fillMaxSize()
     ) {
+        // Background with gradient and circular accents
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            // Base gradient
+            drawRect(brush = gradient)
+            
+            // Circular accent shapes for depth
+            drawCircle(
+                color = Color(0x20DC2626),
+                radius = 150.dp.toPx(),
+                center = Offset(size.width + 100.dp.toPx(), -100.dp.toPx())
+            )
+            
+            drawCircle(
+                color = Color(0x15EF4444),
+                radius = 200.dp.toPx(),
+                center = Offset(-150.dp.toPx(), size.height + 150.dp.toPx())
+            )
+            
+            drawCircle(
+                color = Color(0x10DC2626),
+                radius = 100.dp.toPx(),
+                center = Offset(-50.dp.toPx(), 100.dp.toPx())
+            )
+            
+            // Overlay gradient for texture
+            drawRect(
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        Color(0x20DC2626),
+                        Color(0x00DC2626),
+                        Color(0x30EF4444)
+                    ),
+                    start = Offset(0f, 0f),
+                    end = Offset(size.width, size.height)
+                )
+            )
+        }
+        
+        // Content overlay
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 28.dp)
+        ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -98,14 +143,14 @@ fun HomeScreen(
                 text = "DisciplinedMinds",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground,
+                color = Color.White,
                 letterSpacing = 0.5.sp
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = if (uiState.isTimerActive) "Focused session in progress" else "Select a duration & begin",
                 fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f)
+                color = Color.White.copy(alpha = 0.75f)
             )
             Spacer(modifier = Modifier.height(28.dp))
             CircularTimerCard(
@@ -119,6 +164,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(28.dp))
             ManageAppsAction(onManageApps)
             Spacer(modifier = Modifier.height(12.dp))
+        }
         }
     }
     

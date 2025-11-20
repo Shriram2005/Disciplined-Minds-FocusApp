@@ -123,14 +123,17 @@ class MainActivity : ComponentActivity() {
                         contentWindowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Bottom),
                         bottomBar = {
                             if (permissionState.allGranted) {
-                                NavigationBar {
+                                NavigationBar(
+                                    containerColor = Color(0xFF0f172a),
+                                    contentColor = Color.White
+                                ) {
                                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                                     val currentRoute = navBackStackEntry?.destination?.route
                                     NavigationBarItem(
                                         selected = currentRoute == Screen.Home.route,
                                         onClick = { navController.navigate(Screen.Home.route) },
-                                        icon = { Icon(imageVector = Icons.Filled.Home, contentDescription = "Home") },
-                                        label = { Text("Home") }
+                                        icon = { Icon(imageVector = Icons.Filled.Home, contentDescription = "Home", tint = Color.White) },
+                                        label = { Text("Home", color = Color.White) }
                                     )
                                     NavigationBarItem(
                                         selected = currentRoute == Screen.AppLock.route,
@@ -138,20 +141,20 @@ class MainActivity : ComponentActivity() {
                                             appLockViewModel.loadApplications()
                                             navController.navigate(Screen.AppLock.route)
                                         },
-                                        icon = { Icon(painter = painterResource(R.drawable.ic_lock), contentDescription = "Locks") },
-                                        label = { Text("Locks") }
+                                        icon = { Icon(painter = painterResource(R.drawable.ic_lock), contentDescription = "Locks", tint = Color.White) },
+                                        label = { Text("Locks", color = Color.White) }
                                     )
                                     NavigationBarItem(
                                         selected = currentRoute == Screen.Schedule.route,
                                         onClick = { navController.navigate(Screen.Schedule.route) },
-                                        icon = { Icon(painter = painterResource(R.drawable.ic_schedule), contentDescription = "Schedule") },
-                                        label = { Text("Schedule") }
+                                        icon = { Icon(painter = painterResource(R.drawable.ic_schedule), contentDescription = "Schedule", tint = Color.White) },
+                                        label = { Text("Schedule", color = Color.White) }
                                     )
                                     NavigationBarItem(
                                         selected = currentRoute == Screen.Settings.route,
                                         onClick = { navController.navigate(Screen.Settings.route) },
-                                        icon = { Icon(painter = painterResource(R.drawable.ic_settings), contentDescription = "Settings") },
-                                        label = { Text("Settings") }
+                                        icon = { Icon(painter = painterResource(R.drawable.ic_settings), contentDescription = "Settings", tint = Color.White) },
+                                        label = { Text("Settings", color = Color.White) }
                                     )
                                 }
                             }
