@@ -80,8 +80,8 @@
             android:enabled="true"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.disciplinedminds.ACTION_START_TIMER" />
-                <action android:name="com.disciplinedminds.ACTION_STOP_TIMER" />
+                <action android:name="com.disciplinedminds.ACTION_START_SCHEDULED_TIMER" />
+                <action android:name="com.disciplinedminds.ACTION_STOP_SCHEDULED_TIMER" />
             </intent-filter>
         </receiver>
     </application>
